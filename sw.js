@@ -1,5 +1,5 @@
 // 새 버전을 올릴 때마다 VERSION 숫자를 올리면 앱이 다음 실행 때 업데이트돼요.
-const VERSION = "v5";
+const VERSION = "v6";
 const FILES = ["./", "./index.html", "./manifest.webmanifest", "./icon-192.png", "./icon-512.png"];
 self.addEventListener("install", e => {
   e.waitUntil(caches.open(VERSION).then(c => c.addAll(FILES)).then(() => self.skipWaiting()));

@@ -14,11 +14,12 @@
 :root{
   --bg:#f2f4f1; --card:#ffffff; --fg:#1d2a24; --muted:#6c7a72; --line:#dfe5e0; --accent:#2f6b4f; --accent-soft:#e2eee7;
   --warn:#b4542d; --warn-soft:#f7e6dd; --gold:#b8860b; --gold-soft:#f6ecd2;
-  --in:#3c5f9e; --in-soft:#e4ebf7; --out:#9a4f2c; --out-soft:#f6e7de; --etc:#5d6670; --etc-soft:#e6e9ec;
+  --in:#3c5f9e; --in-soft:#e4ebf7; --out:#9a4f2c; --out-soft:#f6e7de; --etc:#5d6670; --etc-soft:#e6e9ec; --wish:#6b4fa0; --wish-soft:#ece6f5;
+  --wood:#c9a477; --wood-dark:#9c7748; --cabinet:#f6efe4; --bronze:#b0743c; --silver:#98a2ad; --goldcup:#d4a017;
   --hero:#dbe8e0; --hero-fg:#1d2a24; --hero-chip:rgba(255,255,255,.65); --hero-track:rgba(29,42,36,.12);
   --display:"Gowun Batang",Georgia,serif; --body:"IBM Plex Sans KR",-apple-system,"Apple SD Gothic Neo","Noto Sans KR",sans-serif;
 }
-@media (prefers-color-scheme:dark){:root{--bg:#141a17;--card:#1c2420;--fg:#e4ebe6;--muted:#93a29a;--line:#2c3732;--accent:#7cc39e;--accent-soft:#233229;--warn:#ef9a74;--warn-soft:#3a2720;--gold:#e9c46a;--gold-soft:#3a3320;--in:#8fb0ec;--in-soft:#1f2a3c;--out:#eba680;--out-soft:#3a2a21;--etc:#b4bcc5;--etc-soft:#262d33;--hero:#22302a;--hero-fg:#e4ebe6;--hero-chip:rgba(255,255,255,.07);--hero-track:rgba(255,255,255,.12);color-scheme:dark}}
+@media (prefers-color-scheme:dark){:root{--bg:#141a17;--card:#1c2420;--fg:#e4ebe6;--muted:#93a29a;--line:#2c3732;--accent:#7cc39e;--accent-soft:#233229;--warn:#ef9a74;--warn-soft:#3a2720;--gold:#e9c46a;--gold-soft:#3a3320;--in:#8fb0ec;--in-soft:#1f2a3c;--out:#eba680;--out-soft:#3a2a21;--etc:#b4bcc5;--etc-soft:#262d33;--wish:#b9a1ec;--wish-soft:#2a2338;--wood:#7a5a3a;--wood-dark:#553e27;--cabinet:#211c17;--hero:#22302a;--hero-fg:#e4ebe6;--hero-chip:rgba(255,255,255,.07);--hero-track:rgba(255,255,255,.12);color-scheme:dark}}
 *{box-sizing:border-box}
 html,body{margin:0}
 body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:16px;line-height:1.5;-webkit-tap-highlight-color:transparent}
@@ -57,9 +58,8 @@ main{max-width:560px;margin:0 auto;padding-inline:16px;padding-block:4px calc(en
 .tile{display:flex;flex-direction:column;align-items:flex-start;gap:6px;padding:16px;border-radius:16px;text-align:left;min-height:128px;border:1px solid transparent}
 .tile.input{background:var(--in-soft);color:var(--in)}
 .tile.output{background:var(--out-soft);color:var(--out)}
-.tile.etc{grid-column:1/-1;background:var(--etc-soft);color:var(--etc);min-height:0;flex-direction:row;align-items:center;flex-wrap:wrap;column-gap:10px;row-gap:2px;padding:14px 16px}
-.tile.etc .t-desc{flex:1 1 140px}
-.tile.etc .t-count{margin-top:0}
+.tile.etc,.tile.wish{min-height:104px}
+.tile.wish{background:var(--wish-soft);color:var(--wish)}
 .tile .numeral{font-family:var(--display);font-size:2.2rem;line-height:1}
 .tile .t-name{font-weight:600;font-size:1.1rem;color:var(--fg)}
 .tile .t-desc{font-size:.8rem;color:var(--muted);line-height:1.35}
@@ -86,6 +86,7 @@ main{max-width:560px;margin:0 auto;padding-inline:16px;padding-block:4px calc(en
 .tag.input{background:var(--in-soft);color:var(--in)}
 .tag.output{background:var(--out-soft);color:var(--out)}
 .tag.etc{background:var(--etc-soft);color:var(--etc)}
+.tag.wish{background:var(--wish-soft);color:var(--wish)}
 .tag.plain{background:var(--accent-soft);color:var(--fg)}
 .tag.mission{background:var(--gold-soft);color:var(--gold)}
 .tag.late,.tag.today{background:var(--warn-soft);color:var(--warn)}
@@ -131,6 +132,8 @@ main{max-width:560px;margin:0 auto;padding-inline:16px;padding-block:4px calc(en
 .group-head.input{background:var(--in-soft)}
 .group-head.output{background:var(--out-soft)}
 .group-head.etc{background:var(--etc-soft)}
+.group-head.wish{background:var(--wish-soft)}
+.group-head.wish .numeral{color:var(--wish)}
 .group-head.etc .numeral{color:var(--etc)}
 .group-head .numeral{font-family:var(--display);font-size:1.4rem}
 .group-head.input .numeral{color:var(--in)}
@@ -175,6 +178,41 @@ details.done-box .rows{margin-top:8px}
 .quick{display:flex;gap:6px;flex-wrap:wrap}
 .quick button{padding:5px 12px;border:1px solid var(--line);border-radius:999px;font-size:.85rem;color:var(--muted)}
 .quick button:hover{color:var(--fg);border-color:var(--muted)}
+/* missions list + trophy cabinet */
+.m-row{display:flex;align-items:center;gap:10px;padding:14px 12px 14px 16px;background:var(--card);border:1px solid var(--line);border-radius:16px}
+.m-row .m-main{flex:1;min-width:0;display:flex;flex-direction:column;gap:8px;text-align:left;padding:0;border-radius:8px}
+.cabinet{background:var(--cabinet);border:1px solid var(--line);border-radius:16px;padding:16px 14px 10px;display:flex;flex-direction:column;gap:18px}
+.shelf{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;align-items:end;padding:0 2px 10px;position:relative}
+.shelf::after{content:"";position:absolute;left:-8px;right:-8px;bottom:0;height:9px;border-radius:3px;background:linear-gradient(var(--wood),var(--wood-dark));box-shadow:0 4px 6px rgba(0,0,0,.12)}
+.trophy{display:flex;flex-direction:column;align-items:center;gap:3px;padding:4px 2px 6px;text-align:center;min-width:0;border-radius:10px}
+.trophy:hover{background:rgba(0,0,0,.04)}
+.trophy svg{width:46px;height:54px;flex:none}
+.trophy .tt{font-size:.78rem;font-weight:600;line-height:1.3;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;word-break:keep-all;overflow-wrap:anywhere}
+.trophy .td{font-size:.7rem;color:var(--muted);font-variant-numeric:tabular-nums}
+.trophy.ghost{opacity:.35;pointer-events:none}
+.trophy.new svg{animation:pop .6s ease-out}
+@keyframes pop{0%{transform:scale(.4) translateY(10px);opacity:0}60%{transform:scale(1.15)}100%{transform:none;opacity:1}}
+.badge-done{display:inline-flex;align-items:center;gap:6px;font-size:.85rem;font-weight:600;color:var(--gold)}
+.hero-trophy{display:flex;align-items:center;gap:14px}
+.hero-trophy svg{width:56px;height:66px;flex:none}
+/* component modules in the add sheet */
+.kind-pill{font-size:.75rem;font-weight:600;padding:2px 10px;border-radius:999px;background:var(--accent-soft);color:var(--accent);vertical-align:middle;margin-left:8px;font-family:var(--body)}
+.mods{display:flex;flex-direction:column;gap:8px}
+.mod{border:1px solid var(--line);border-radius:12px;background:var(--bg);overflow:hidden}
+.mod-head{display:flex;align-items:center;gap:8px;padding:8px 6px 8px 12px;border-bottom:1px solid var(--line)}
+.mod-name{flex:1;font-weight:600;font-size:.9rem}
+.mod-lock{font-size:.75rem;color:var(--muted)}
+.mod-x{width:30px;height:30px;color:var(--muted);font-size:1.1rem;line-height:1;border-radius:8px}
+.mod-x:hover{background:var(--line);color:var(--fg)}
+.mod-body{padding:10px 12px;display:flex;flex-direction:column;gap:8px}
+.mod-body input,.mod-body select{background:var(--card)}
+.add-mod{padding:11px;border:1.5px dashed var(--line);border-radius:12px;color:var(--accent);font-weight:600;width:100%}
+.add-mod:hover{border-color:var(--accent)}
+.picker{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.pick{display:flex;flex-direction:column;gap:2px;text-align:left;padding:10px 12px;border:1px solid var(--line);border-radius:12px;background:var(--bg)}
+.pick b{font-size:.9rem}
+.pick span{font-size:.75rem;color:var(--muted);line-height:1.35}
+.pick:disabled{opacity:.5;cursor:not-allowed}
 .toggle{display:flex;align-items:center;gap:8px;font-size:.92rem;cursor:pointer}
 .toggle input{width:18px;height:18px;accent-color:var(--accent)}
 .plan{display:flex;flex-direction:column;gap:8px;padding:10px;border-radius:10px;background:var(--bg)}
@@ -208,9 +246,10 @@ const LS="checklist-v4", OLD=["todo-items-v3","todo-items-v1"];
 const DAYS=["일","월","화","수","목","금","토"], ORDER=[1,2,3,4,5,6,0];
 const GROUPS={input:"인풋",output:"아웃풋",etc:"기타"};
 const GKEYS=["input","output","etc"];
-const GDESC={input:"독서·공부·영화·액티비티처럼 경험하고 받아들이는 것",output:"그림·글쓰기처럼 직접 만들어 내는 것",etc:"장보기·청소·서류처럼 자잘한 일"};
+const GDESC={input:"독서·공부·영화·액티비티처럼 경험하고 받아들이는 것",output:"그림·글쓰기처럼 직접 만들어 내는 것",etc:"장보기·청소처럼 자잘한 일"};
 const PRIO={3:"높음",2:"보통",1:"낮음"};
-let S={items:[],quests:[],missions:[],subs:{input:["독서","공부","영화","액티비티"],output:["그림","글쓰기","만들기"],etc:["생활","업무","약속"]}};
+const WISH_KINDS=["보고 싶은 것","하고 싶은 것","가고 싶은 곳","갖고 싶은 것"];
+let S={items:[],quests:[],missions:[],wishes:[],wishKinds:WISH_KINDS.slice(),subs:{input:["독서","공부","영화","액티비티"],output:["그림","글쓰기","만들기"],etc:["생활","업무","약속"]}};
 let homeLimit=8, homeMission="", homeTab="today";
 try{const ht=localStorage.getItem("checklist-hometab");if(ht==="all"||ht==="mission"||ht==="today")homeTab=ht;}catch(e){}
 
@@ -239,6 +278,8 @@ function merge(d){
   });
   if(Array.isArray(d.quests)) S.quests=d.quests.map(q=>({mission:"",prio:2,...q,group:q.group||"etc",log:q.log||{}}));
   if(Array.isArray(d.missions)) S.missions=clone(d.missions);
+  if(Array.isArray(d.wishes)) S.wishes=clone(d.wishes);
+  if(Array.isArray(d.wishKinds)) S.wishKinds=d.wishKinds.slice();
   if(d.subs&&d.subs.input&&d.subs.output){const def=S.subs.etc;S.subs=clone(d.subs);if(!S.subs.etc)S.subs.etc=def;}
 }
 function save(){
@@ -269,6 +310,30 @@ function missionStats(m){
   let lv=1,rest=xp,need=100;
   while(rest>=need){rest-=need;lv++;need=100+(lv-1)*50;}
   return {its,qs,made:its.length+qs.length,done,checks,xp,lv,rest,need};
+}
+
+const activeMissions=()=>S.missions.filter(m=>!m.done);
+const tierOf=lv=>lv>=6?"goldcup":lv>=3?"silver":"bronze";
+function trophySVG(tier){
+  return `<svg viewBox="0 0 40 48" aria-hidden="true"><path d="M10 7H6a5 5 0 0 0 5 9" fill="none" style="stroke:var(--${tier})" stroke-width="2.4"/><path d="M30 7h4a5 5 0 0 1-5 9" fill="none" style="stroke:var(--${tier})" stroke-width="2.4"/><path d="M10 3h20v11a10 10 0 0 1-20 0z" style="fill:var(--${tier})"/><path d="M14 6h3v8a6 6 0 0 0 2.5 5" fill="none" stroke="#fff" stroke-opacity=".45" stroke-width="2" stroke-linecap="round"/><rect x="17.5" y="24" width="5" height="7" style="fill:var(--${tier})"/><rect x="11" y="31" width="18" height="4" rx="1.2" style="fill:var(--${tier})"/><rect x="8" y="36" width="24" height="9" rx="2" style="fill:var(--wood-dark)"/></svg>`;
+}
+const fmtDate=d=>d?d.replace(/-/g,"."):"";
+let freshTrophy="";
+function completeMission(m){
+  const s=missionStats(m);
+  m.done=true;m.doneAt=today();m.trophy={lv:s.lv,xp:s.xp,made:s.made};
+  freshTrophy=m.id;save();
+  toast(`★ ${m.title} 달성! 트로피 진열장에 올렸어요`);
+}
+function reopenMission(m){m.done=false;delete m.doneAt;delete m.trophy;save();toast("다시 진행 중으로 옮겼어요.");}
+function deleteMission(m){
+  S.missions=S.missions.filter(x=>x.id!==m.id);
+  [...S.items,...S.quests].forEach(x=>{if(x.mission===m.id)x.mission="";});
+  save();toast("미션을 삭제했어요. 연결된 할 일은 남아 있어요.");
+}
+function armButton(btn,confirmText,fn){
+  let armed=false;const orig=btn.textContent;
+  btn.addEventListener("click",()=>{if(!armed){armed=true;btn.textContent=confirmText;setTimeout(()=>{armed=false;btn.textContent=orig;},3000);return;}fn();});
 }
 
 /* ================= shared row builders ================= */
@@ -359,10 +424,11 @@ function screenHome(v){
   const st=el("span","star");st.innerHTML=ICON_STAR;
   const body=el("span","mb-body");body.appendChild(el("span","mb-title","메인 미션"));
   let sub="큰 목표를 적어 두고 레벨을 올려 보세요";
-  if(S.missions.length){
-    const best=S.missions.map(m=>({m,s:missionStats(m)})).sort((a,b)=>b.s.xp-a.s.xp)[0];
-    sub=`${S.missions.length}개 진행 중 · ${best.m.title} Lv.${best.s.lv}`;
-  }
+  const act=activeMissions(), tro=S.missions.length-act.length;
+  if(act.length){
+    const best=act.map(m=>({m,s:missionStats(m)})).sort((a,b)=>b.s.xp-a.s.xp)[0];
+    sub=`${act.length}개 진행 중 · ${best.m.title} Lv.${best.s.lv}`+(tro?` · 트로피 ${tro}`:"");
+  } else if(tro) sub=`진행 중인 미션 없음 · 트로피 ${tro}개`;
   body.appendChild(el("span","mb-sub",sub));
   mb.append(st,body,el("span","chev","›"));
   mb.addEventListener("click",()=>go("missions"));
@@ -376,6 +442,11 @@ function screenHome(v){
     t.addEventListener("click",()=>go(g));
     tiles.appendChild(t);
   });
+  const wt=el("button","tile wish");wt.type="button";
+  const wOpen=S.wishes.filter(w=>!w.done).length;
+  wt.append(el("span","t-name","위시리스트"),el("span","t-desc","언젠가 보고 싶고 하고 싶은 것"),el("span","t-count",`${wOpen}개`));
+  wt.addEventListener("click",()=>go("wish"));
+  tiles.appendChild(wt);
   v.appendChild(tiles);
 
   const t=today();
@@ -404,7 +475,7 @@ function screenHome(v){
     } else {
       const sel=el("select");sel.id="homeMission";sel.setAttribute("aria-label","메인 미션 선택");
       const op=(val,txt)=>{const o=el("option",null,txt);o.value=val;sel.appendChild(o);};
-      op("","모든 메인 미션");S.missions.forEach(m=>op(m.id,"★ "+m.title));
+      op("","모든 메인 미션");activeMissions().forEach(m=>op(m.id,"★ "+m.title));S.missions.filter(m=>m.done).forEach(m=>op(m.id,"★ "+m.title+" (달성)"));
       if(homeMission&&!S.missions.some(m=>m.id===homeMission))homeMission="";
       sel.value=homeMission;sel.addEventListener("change",()=>{homeMission=sel.value;homeLimit=8;render();});
       area.appendChild(sel);
@@ -451,39 +522,89 @@ function screenHome(v){
 }
 
 function screenMissions(v){
-  v.appendChild(el("p","hint","메인 미션은 큰 목표예요. 할 일이나 반복 퀘스트를 만들 때 미션에 연결하면, 만들고 완료할 때마다 경험치가 쌓여 레벨이 올라가요."));
+  v.appendChild(el("p","hint","메인 미션은 큰 목표예요. 할 일이나 반복 퀘스트에 미션을 연결하면, 만들고 완료할 때마다 경험치가 쌓여 레벨이 올라가요. 목표를 이루면 체크해서 트로피로 남기세요."));
   const f=el("form","inline-form");
   const inp=el("input");inp.type="text";inp.id="newMission";inp.placeholder="새 메인 미션 (예: 올해 책 30권 읽기)";inp.maxLength=60;inp.setAttribute("aria-label","새 메인 미션");
   const b=el("button","btn","추가");b.type="submit";
   f.append(inp,b);
   f.addEventListener("submit",e=>{e.preventDefault();const t=inp.value.trim();if(!t){inp.focus();return;}S.missions.push({id:uid(),title:t,created:Date.now()});save();render();});
   v.appendChild(f);
-  if(!S.missions.length){v.appendChild(el("div","empty","아직 메인 미션이 없어요. 위에 첫 목표를 적어 보세요."));return;}
-  S.missions.map(m=>({m,s:missionStats(m)})).sort((a,b)=>b.s.xp-a.s.xp||a.m.created-b.m.created).forEach(({m,s})=>{
-    const c=el("button","m-card");c.type="button";
+
+  const act=activeMissions();
+  const sec=el("div","sec");sec.append(el("h3",null,"진행 중"),el("span",null,act.length?`${act.length}개`:""));v.appendChild(sec);
+  const list=el("div","rows");
+  if(!act.length) list.appendChild(el("div","empty",S.missions.length?"진행 중인 미션이 없어요. 새 목표를 적어 보세요.":"아직 메인 미션이 없어요. 위에 첫 목표를 적어 보세요."));
+  act.map(m=>({m,s:missionStats(m)})).sort((x,y)=>y.s.xp-x.s.xp||x.m.created-y.m.created).forEach(({m,s})=>{
+    const row=el("div","m-row");
+    const main=el("button","m-main");main.type="button";
     const h=el("div","m-head");h.append(el("span","m-title",m.title),el("span","lv","Lv."+s.lv));
-    c.append(h,xpBlock(s),el("span","hint",`할 일·퀘스트 ${s.made}개 · 완료 ${s.done+s.checks}회`));
-    c.addEventListener("click",()=>go("mission/"+m.id));
-    v.appendChild(c);
+    main.append(h,xpBlock(s),el("span","hint",`할 일·퀘스트 ${s.made}개 · 완료 ${s.done+s.checks}회`));
+    main.addEventListener("click",()=>go("mission/"+m.id));
+    row.append(main,checkBtn(false,false,m.title+" 달성 완료",()=>{completeMission(m);render();}));
+    list.appendChild(row);
   });
+  v.appendChild(list);
+
+  const done=S.missions.filter(m=>m.done).sort((x,y)=>(y.doneAt||"").localeCompare(x.doneAt||""));
+  const sec2=el("div","sec");sec2.append(el("h3",null,"트로피 진열장"),el("span",null,done.length?`${done.length}개`:""));v.appendChild(sec2);
+  v.appendChild(cabinet(done));
+  if(!done.length) v.appendChild(el("p","hint","미션을 달성하면 트로피가 여기에 진열돼요. 레벨에 따라 동·은·금 트로피를 받아요."));
+}
+function cabinet(done){
+  const cab=el("div","cabinet");
+  const slots=done.slice();const n=Math.max(3,Math.ceil(slots.length/3)*3);
+  for(let i=0;i<n;i+=3){
+    const shelf=el("div","shelf");
+    for(let j=i;j<i+3;j++){
+      const m=slots[j];
+      if(!m){const g=el("div","trophy ghost");g.innerHTML=trophySVG("silver");shelf.appendChild(g);continue;}
+      const lv=m.trophy?m.trophy.lv:1;
+      const t=el("button","trophy"+(m.id===freshTrophy?" new":""));t.type="button";t.setAttribute("aria-label",`${m.title} 트로피, Lv.${lv}, ${fmtDate(m.doneAt)} 달성`);
+      t.innerHTML=trophySVG(tierOf(lv));
+      t.append(el("span","tt",m.title),el("span","td",`Lv.${lv} · ${fmtDate(m.doneAt).slice(2)}`));
+      t.addEventListener("click",()=>go("mission/"+m.id));
+      shelf.appendChild(t);
+    }
+    cab.appendChild(shelf);
+  }
+  freshTrophy="";
+  return cab;
 }
 
 function screenMission(v,id){
   const m=S.missions.find(x=>x.id===id); if(!m){go("missions",true);return;}
-  setTitle("메인 미션");
+  setTitle(m.done?"트로피":"메인 미션");
   const s=missionStats(m);
   const hero=el("div","m-card m-hero");
-  const h=el("div","m-head");h.append(el("span","m-title",m.title),el("span","lv","Lv."+s.lv));
+  const h=el("div","m-head");
+  if(m.done){
+    const lv=m.trophy?m.trophy.lv:s.lv;
+    const ht=el("div","hero-trophy");const ic=el("span");ic.innerHTML=trophySVG(tierOf(lv));
+    const tx=el("div");tx.style.minWidth="0";tx.append(el("div","m-title",m.title),el("span","badge-done",`${fmtDate(m.doneAt)} 달성 · Lv.${lv}`));
+    ht.append(ic.firstChild,tx);hero.appendChild(ht);
+  } else {
+    h.append(el("span","m-title",m.title),el("span","lv","Lv."+s.lv));hero.append(h,xpBlock(s));
+  }
   const stats=el("div","stats");
   [[s.made,"만든 할 일"],[s.done,"완료한 할 일"],[s.checks,"퀘스트 완료"]].forEach(([n,l])=>{const d=el("div","stat");d.append(el("b",null,String(n)),el("span",null,l));stats.appendChild(d);});
-  hero.append(h,xpBlock(s),stats);
+  hero.appendChild(stats);
   v.appendChild(hero);
-  v.appendChild(el("p","hint","할 일 만들기 +10 · 할 일 완료 +30 · 퀘스트 만들기 +10 · 퀘스트 1회 완료 +15 XP"));
 
-  const br=el("div","btnrow");
-  const add=el("button","btn","이 미션에 할 일 추가");add.type="button";add.addEventListener("click",()=>openSheet({mode:"new",mission:m.id}));
+  if(!m.done){
+    v.appendChild(el("p","hint","할 일 만들기 +10 · 할 일 완료 +30 · 퀘스트 만들기 +10 · 퀘스트 1회 완료 +15 XP"));
+    const br=el("div","btnrow");
+    const add=el("button","btn","이 미션에 할 일 추가");add.type="button";add.addEventListener("click",()=>openSheet({mode:"new",mission:m.id}));
+    const fin=el("button","btn soft","달성 완료");fin.type="button";fin.addEventListener("click",()=>{completeMission(m);go("missions");});
+    br.append(add,fin);v.appendChild(br);
+  } else {
+    const br=el("div","btnrow");
+    const re=el("button","btn soft","다시 진행하기");re.type="button";re.addEventListener("click",()=>{reopenMission(m);render();});
+    br.appendChild(re);v.appendChild(br);
+  }
+  const br2=el("div","btnrow");
   const ed=el("button","btn soft","이름 바꾸기");ed.type="button";ed.addEventListener("click",()=>openSheet({mode:"edit-mission",id:m.id}));
-  br.append(add,ed);v.appendChild(br);
+  const del=el("button","btn danger","미션 삭제");del.type="button";armButton(del,"한 번 더 누르면 삭제돼요",()=>{deleteMission(m);go("missions",true);});
+  br2.append(ed,del);v.appendChild(br2);
 
   if(s.qs.length){const sec=el("div","sec");sec.append(el("h3",null,"반복 퀘스트"),el("span",null,`${s.qs.length}개`));v.appendChild(sec);
     const r=el("div","rows");s.qs.forEach(q=>r.appendChild(isTodayQuest(q)?questRow(q,{showMission:false}):questCard(q)));v.appendChild(r);}
@@ -493,6 +614,50 @@ function screenMission(v,id){
   if(!s.its.length) r.appendChild(el("div","empty","이 미션에 연결된 할 일이 아직 없어요."));
   [...open,...done].forEach(i=>r.appendChild(taskRow(i,{showMission:false})));
   v.appendChild(r);
+}
+
+/* ================= wishlist ================= */
+let wishFilter="";
+function screenWish(v){
+  const head=el("div","group-head wish");head.append(el("span","numeral","위시리스트"),el("p",null,"일정은 없어도 언젠가 보고 싶고, 하고 싶고, 가 보고 싶은 것들을 모아 두는 곳이에요."));
+  v.appendChild(head);
+  if(wishFilter&&!S.wishKinds.includes(wishFilter))wishFilter="";
+  const f=el("form","inline-form");
+  const inp=el("input");inp.type="text";inp.id="newWish";inp.maxLength=120;inp.placeholder=(wishFilter||"보고 싶은 것")+" 적기";inp.setAttribute("aria-label","새 위시");
+  const b=el("button","btn","추가");b.type="submit";f.append(inp,b);
+  f.addEventListener("submit",e=>{e.preventDefault();const t=inp.value.trim();if(!t){inp.focus();return;}
+    S.wishes.push({id:uid(),text:t,kind:wishFilter||S.wishKinds[0]||"",memo:"",done:false,created:Date.now()});save();render();setTimeout(()=>{const n=$("newWish");if(n)n.focus();},0);});
+  v.appendChild(f);
+  const sel=el("select");sel.id="wishFilter";sel.setAttribute("aria-label","종류로 보기");
+  const op=(val,t)=>{const o=el("option",null,t);o.value=val;sel.appendChild(o);};
+  op("","전체 종류");S.wishKinds.forEach(k=>op(k,k));sel.value=wishFilter;
+  sel.addEventListener("change",()=>{wishFilter=sel.value;render();});
+  v.appendChild(sel);
+  const match=w=>!wishFilter||w.kind===wishFilter;
+  const open=S.wishes.filter(w=>!w.done&&match(w)).sort((a,b)=>b.created-a.created);
+  const done=S.wishes.filter(w=>w.done&&match(w)).sort((a,b)=>(b.doneAt||"").localeCompare(a.doneAt||""));
+  const sec=el("div","sec");sec.append(el("h3",null,"언젠가"),el("span",null,open.length?`${open.length}개`:""));v.appendChild(sec);
+  const r=el("div","rows");
+  if(!open.length) r.appendChild(el("div","empty",S.wishes.length?"이 종류에는 아직 없어요.":"보고 싶은 영화, 가 보고 싶은 곳처럼 떠오르는 걸 적어 두세요."));
+  open.forEach(w=>r.appendChild(wishRow(w)));
+  v.appendChild(r);
+  if(done.length){
+    const d=el("details","done-box");d.appendChild(el("summary",null,`이룬 것 ${done.length}개`));
+    const rr=el("div","rows");done.forEach(w=>rr.appendChild(wishRow(w)));d.appendChild(rr);v.appendChild(d);
+  }
+}
+function wishRow(w){
+  const c=el("div","row-card"+(w.done?" done":""));
+  const main=el("button","row-main");main.type="button";
+  main.appendChild(el("span","row-text",w.text));
+  if(w.memo) main.appendChild(el("span","q-info",w.memo));
+  const m=el("span","meta");if(w.kind)m.appendChild(el("span","tag wish",w.kind));if(w.done&&w.doneAt)m.appendChild(el("span","tag plain",fmtDate(w.doneAt)+" 이룸"));
+  if(m.childNodes.length)main.appendChild(m);
+  main.addEventListener("click",()=>openSheet({mode:"edit-wish",id:w.id}));
+  c.append(main,checkBtn(!!w.done,true,w.text+" 이뤘어요",()=>{
+    w.done=!w.done;w.doneAt=w.done?today():"";save();render();if(w.done)toast("이뤘어요! '이룬 것'에 남겨 둘게요.");
+  }));
+  return c;
 }
 
 let groupFilter={input:"",output:"",etc:""};
@@ -549,6 +714,16 @@ function screenSettings(v){
   }
   v.appendChild(p);
 
+  const wp=el("div","panel");wp.appendChild(el("h3",null,"위시리스트 종류"));
+  const wrow=el("div","subs");
+  S.wishKinds.forEach(k=>{const c=el("span","subchip tag wish",k);const x=el("button",null,"×");x.type="button";x.setAttribute("aria-label",k+" 삭제");
+    x.addEventListener("click",()=>{S.wishKinds=S.wishKinds.filter(z=>z!==k);S.wishes.forEach(w=>{if(w.kind===k)w.kind="";});save();render();});c.appendChild(x);wrow.appendChild(c);});
+  wp.appendChild(wrow);
+  const wf=el("form","inline-form");const wi=el("input");wi.type="text";wi.id="newWishKind";wi.placeholder="새 종류 (예: 배우고 싶은 것)";wi.maxLength=20;wi.setAttribute("aria-label","새 위시리스트 종류");
+  const wb=el("button","btn soft","추가");wb.type="submit";wf.append(wi,wb);
+  wf.addEventListener("submit",e=>{e.preventDefault();const n=wi.value.trim();if(!n||S.wishKinds.includes(n))return;S.wishKinds.push(n);save();render();});
+  wp.appendChild(wf);v.appendChild(wp);
+
   const b=el("div","panel");b.appendChild(el("h3",null,"백업 · 복원"));
   b.appendChild(el("span","hint","데이터는 이 폰에만 저장돼요. 가끔 백업 파일을 저장해 두면 폰을 바꿔도 그대로 옮길 수 있어요."));
   const br=el("div","btnrow");
@@ -569,8 +744,8 @@ function screenSettings(v){
   v.appendChild(b);
 }
 function restore(text){
-  try{const d=JSON.parse(text);if(!d||(!Array.isArray(d.items)&&!Array.isArray(d.quests)))throw 0;
-    S={items:[],quests:[],missions:[],subs:S.subs};merge(d);save();render();toast("복원했어요.");}
+  try{const d=JSON.parse(text);if(!d||(!Array.isArray(d.items)&&!Array.isArray(d.quests)&&!Array.isArray(d.wishes)))throw 0;
+    S={items:[],quests:[],missions:[],wishes:[],wishKinds:S.wishKinds,subs:S.subs};merge(d);save();render();toast("복원했어요.");}
   catch(e){toast("백업 내용을 읽지 못했어요. 파일을 확인해 주세요.");}
 }
 
@@ -588,6 +763,7 @@ function render(){
   else if(r==="missions"){setTitle("메인 미션");screenMissions(v);}
   else if(r.startsWith("mission/")){screenMission(v,r.slice(8));}
   else if(GKEYS.includes(r)){setTitle(GROUPS[r]);screenGroup(v,r);}
+  else if(r==="wish"){setTitle("위시리스트");screenWish(v);}
   else if(r==="settings"){setTitle("설정");screenSettings(v);}
   else {go("home",true);return render();}
   window.scrollTo(0,y);
@@ -598,6 +774,8 @@ $("backBtn").addEventListener("click",()=>{if(history.length>1)history.back();el
 $("settingsBtn").addEventListener("click",()=>go("settings"));
 $("fab").addEventListener("click",()=>{
   const r=route();
+  if(r==="wish"){openSheet({mode:"wish",kind:wishFilter});return;}
+  if(r==="missions"){const n=$("newMission");if(n){n.focus();n.scrollIntoView({block:"center"});}return;}
   openSheet({mode:"new",group:GKEYS.includes(r)?r:undefined,sub:GKEYS.includes(r)?groupFilter[r]:"",mission:r.startsWith("mission/")?r.slice(8):""});
 });
 
@@ -630,29 +808,37 @@ function openSheet(o){
     sh.appendChild(field("이름",i));
     const br=el("div","btnrow");const sv=el("button","btn","저장");sv.type="submit";
     const del=el("button","btn danger","미션 삭제");del.type="button";
-    let armed=false;
-    del.addEventListener("click",()=>{if(!armed){armed=true;del.textContent="한 번 더 누르면 삭제돼요";return;}
-      S.missions=S.missions.filter(x=>x.id!==m.id);[...S.items,...S.quests].forEach(x=>{if(x.mission===m.id)x.mission="";});save();closeSheet();go("missions",true);toast("미션을 삭제했어요. 연결된 할 일은 남아 있어요.");});
+    armButton(del,"한 번 더 누르면 삭제돼요",()=>{deleteMission(m);closeSheet();go("missions",true);});
     br.append(sv,del);sh.appendChild(br);
     sh.addEventListener("submit",e=>{e.preventDefault();const t=i.value.trim();if(!t)return;m.title=t;save();closeSheet();render();});
     i.focus();return;
   }
 
+  if(o.mode==="wish"||o.mode==="edit-wish"){wishSheet(sh,o);return;}
+
   const editing=o.mode==="edit-task"||o.mode==="edit-quest";
-  const src=o.mode==="edit-task"?S.items.find(x=>x.id===o.id):o.mode==="edit-quest"?S.quests.find(x=>x.id===o.id):null;
+  const isQuestEdit=o.mode==="edit-quest";
+  const src=o.mode==="edit-task"?S.items.find(x=>x.id===o.id):isQuestEdit?S.quests.find(x=>x.id===o.id):null;
   const st={
-    kind:o.mode==="edit-quest"?"quest":"task",
-    group:src?(src.group||"input"):(o.group||"input"),
+    group:src?(src.group||"etc"):(o.group||"input"),
     sub:src?(src.sub||""):(o.sub||""),
-    mission:src?(src.mission||""):(o.mission||""),
     prio:src?(src.prio||2):2,
-    days:src&&src.days?src.days.slice():[], usePlan:false
+    days:src&&src.days?src.days.slice():[],
+    mods:new Set()
   };
-  sh.appendChild(el("h3",null,editing?(st.kind==="quest"?"반복 퀘스트 수정":"할 일 수정"):"새로 추가"));
-  if(!editing) sh.appendChild(seg("",[["task","할 일"],["quest","반복 퀘스트"]],st.kind,v=>{st.kind=v;sync();}));
+  const linkedMission=src?src.mission:(o.mission||"");
+  if(src){
+    if(!isQuestEdit&&src.due) st.mods.add("due");
+    if(isQuestEdit){st.mods.add("repeat");if(src.plan)st.mods.add("plan");}
+    if(src.mission) st.mods.add("mission");
+  } else if(o.mission&&S.missions.some(m=>m.id===o.mission&&!m.done)) st.mods.add("mission");
+  const locked=new Set(isQuestEdit?["repeat","plan"]:[]);
+
+  const h=el("h3",null,editing?(isQuestEdit?"반복 퀘스트 수정":"할 일 수정"):"새로 추가");
+  const pill=el("span","kind-pill");h.appendChild(pill);sh.appendChild(h);
 
   const title=el("input");title.type="text";title.id="f-title";title.maxLength=200;title.placeholder="예: 『코스모스』 읽기";
-  title.value=src?(src.text||src.title||""):"";
+  title.value=src?(src.text||src.title||""):(o.title||"");
   sh.appendChild(field("제목",title));
 
   sh.appendChild(field("큰 카테고리",seg("group",[["input","인풋"],["output","아웃풋"],["etc","기타"]],st.group,v=>{st.group=v;st.sub="";fillSubs();})));
@@ -666,97 +852,186 @@ function openSheet(o){
   sub.addEventListener("change",()=>{newSub.hidden=sub.value!=="__new";if(sub.value!=="__new")st.sub=sub.value;else newSub.focus();});
   fillSubs();
   const subWrap=el("div","field");subWrap.append(el("span","lbl","세부 카테고리"),sub,newSub);
+  const prioWrap=field("중요도",seg("prio",[["1","낮음"],["2","보통"],["3","높음"]],st.prio,v=>st.prio=+v));
+  const two=el("div","two");two.append(subWrap,prioWrap);sh.appendChild(two);
 
-  const mis=el("select");mis.id="f-mission";
-  const mo=(v,t)=>{const op=el("option",null,t);op.value=v;mis.appendChild(op);};
-  mo("","연결 안 함");S.missions.forEach(m=>mo(m.id,"★ "+m.title));mis.value=st.mission;
-  mis.addEventListener("change",()=>st.mission=mis.value);
-  const misWrap=field("메인 미션",mis);
-  if(!S.missions.length){const h=el("span","hint","메인 미션 화면에서 큰 목표를 먼저 만들면 여기서 연결할 수 있어요.");misWrap.appendChild(h);}
-  const two=el("div","two");two.append(subWrap,misWrap);sh.appendChild(two);
-
-  sh.appendChild(field("중요도",seg("prio",[["1","낮음"],["2","보통"],["3","높음"]],st.prio,v=>st.prio=+v)));
-
-  // task-only
-  const due=el("input");due.type="date";due.id="f-due";due.value=src&&src.due?src.due:"";
+  /* --- module bodies (built once so values survive add/remove) --- */
+  const due=el("input");due.type="date";due.id="f-due";due.value=src&&src.due?src.due:"";due.setAttribute("aria-label","희망 마감일");
   const quick=el("div","quick");
-  [["오늘",0],["내일",1],["이번 주말",-1],["없음",null]].forEach(([l,n])=>{const b=el("button",null,l);b.type="button";
-    b.addEventListener("click",()=>{if(n===null){due.value="";return;}const d=new Date();if(n===-1){const add=(6-d.getDay()+7)%7;d.setDate(d.getDate()+add);}else d.setDate(d.getDate()+n);due.value=ymd(d);});quick.appendChild(b);});
-  const dueWrap=field("희망 마감일",due);dueWrap.appendChild(quick);
-  sh.appendChild(dueWrap);
+  [["오늘",0],["내일",1],["이번 주말",-1]].forEach(([l,n])=>{const b=el("button",null,l);b.type="button";
+    b.addEventListener("click",()=>{const d=new Date();if(n===-1){d.setDate(d.getDate()+((6-d.getDay()+7)%7));}else d.setDate(d.getDate()+n);due.value=ymd(d);});quick.appendChild(b);});
+  const dueBody=[due,quick];
 
-  // quest-only
-  const qWrap=el("div","field");
   const dayBox=el("div","days");
-  ORDER.forEach(d=>{const b=el("button",null,DAYS[d]);b.type="button";b.setAttribute("aria-pressed",String(st.days.includes(d)));b.setAttribute("aria-label",DAYS[d]+"요일");
-    b.disabled=editing;
-    b.addEventListener("click",()=>{if(st.days.includes(d))st.days=st.days.filter(x=>x!==d);else st.days.push(d);b.setAttribute("aria-pressed",String(st.days.includes(d)));dErr.hidden=true;preview();});dayBox.appendChild(b);});
   const dErr=el("span","preview err","반복할 요일을 하나 이상 골라 주세요.");dErr.hidden=true;
-  qWrap.append(el("span","lbl","반복 요일"),dayBox,dErr);
-  const plan=el("div","plan");plan.hidden=true;
+  ORDER.forEach(d=>{const b=el("button",null,DAYS[d]);b.type="button";b.setAttribute("aria-pressed",String(st.days.includes(d)));b.setAttribute("aria-label",DAYS[d]+"요일");
+    b.disabled=isQuestEdit;
+    b.addEventListener("click",()=>{if(st.days.includes(d))st.days=st.days.filter(x=>x!==d);else st.days.push(d);b.setAttribute("aria-pressed",String(st.days.includes(d)));dErr.hidden=true;preview();});dayBox.appendChild(b);});
+  const repeatBody=[dayBox,dErr];
+  if(isQuestEdit) repeatBody.push(el("span","hint","요일은 만든 뒤에 바꿀 수 없어요."));
+
   const total=el("input");total.type="number";total.min="1";total.inputMode="numeric";total.placeholder="320";total.id="f-total";total.setAttribute("aria-label","총 분량");
   const unit=el("input");unit.type="text";unit.value="페이지";unit.maxLength=8;unit.id="f-unit";unit.setAttribute("aria-label","단위");
   const span=el("input");span.type="number";span.min="1";span.inputMode="numeric";span.placeholder="14";span.id="f-span";span.setAttribute("aria-label","기간(일)");
   const r1=el("div","r");r1.append(el("span",null,"총 분량"),total,unit);
   const r2=el("div","r");r2.append(el("span",null,"오늘부터"),span,el("span",null,"일 동안"));
   const pv=el("div","preview","총 분량과 기간을 넣으면 한 번에 할 분량을 계산해 드려요.");
-  plan.append(r1,r2,pv);
-  const tg=el("label","toggle");const cb=el("input");cb.type="checkbox";cb.id="f-useplan";tg.append(cb,"분량을 나눠서 하기 (예: 책 페이지)");
-  cb.addEventListener("change",()=>{st.usePlan=cb.checked;plan.hidden=!cb.checked;preview();});
   [total,span,unit].forEach(x=>x.addEventListener("input",preview));
-  if(!editing){qWrap.append(tg,plan);}
-  else {
-    const q=src;if(q&&q.days){const info=q.plan?`${q.plan.total}${q.plan.unit}를 ${q.plan.sessions}회에 나눠서 (한 번에 ${q.plan.per}${q.plan.unit})`:"분량 나누기 없음";
-      qWrap.appendChild(el("span","hint",info+" · 요일과 분량은 바꿀 수 없어요. 바꾸려면 삭제 후 새로 만들어 주세요."));}
+  const planWrap=el("div","plan");planWrap.style.padding="0";planWrap.style.background="none";
+  if(isQuestEdit&&src.plan){planWrap.appendChild(el("span","hint",`${src.plan.total}${src.plan.unit}를 ${src.plan.sessions}회에 나눠서 · 한 번에 ${src.plan.per}${src.plan.unit} · 만든 뒤에는 바꿀 수 없어요.`));}
+  else planWrap.append(r1,r2,pv);
+  const planBody=[planWrap];
+
+  const mis=el("select");mis.id="f-mission";mis.setAttribute("aria-label","메인 미션");
+  activeMissions().forEach(m=>{const op=el("option",null,"★ "+m.title);op.value=m.id;mis.appendChild(op);});
+  if(linkedMission){const lm=S.missions.find(m=>m.id===linkedMission);if(lm&&lm.done){const op=el("option",null,"★ "+lm.title+" (달성)");op.value=lm.id;mis.appendChild(op);}}
+  if(linkedMission)mis.value=linkedMission;
+  const missionBody=[mis,el("span","hint","만들면 +10, 완료할 때마다 경험치가 쌓여요.")];
+
+  const MODS={
+    due:{name:"희망 마감일",desc:"언제까지 끝낼지 정해요. 오늘 탭 기준이 돼요",body:dueBody},
+    repeat:{name:"반복 요일",desc:"고른 요일마다 오늘 할 일에 나타나요",body:repeatBody},
+    plan:{name:"분량 나누기",desc:"총 분량을 기간에 맞춰 한 번 분량으로 나눠요",body:planBody},
+    mission:{name:"메인 미션 연결",desc:"완료할 때마다 미션 경험치가 쌓여요",body:missionBody}
+  };
+  const MORDER=["due","repeat","plan","mission"];
+  function availability(k){ // false = hide, string = disabled reason, null = ok
+    if(st.mods.has(k)) return false;
+    if(o.mode==="edit-task"&&(k==="repeat"||k==="plan")) return false;
+    if(isQuestEdit&&k!=="mission") return false;
+    if(k==="due"&&st.mods.has("repeat")) return "반복 요일과 함께 쓸 수 없어요";
+    if((k==="repeat"||k==="plan")&&st.mods.has("due")) return "희망 마감일과 함께 쓸 수 없어요";
+    if(k==="mission"&&!mis.options.length) return "메인 미션을 먼저 만들어 주세요";
+    return null;
   }
-  sh.appendChild(qWrap);
+
+  sh.appendChild(el("span","lbl","기능"));
+  const modsBox=el("div","mods");sh.appendChild(modsBox);
+  const addBtn=el("button","add-mod","+ 기능 추가");addBtn.type="button";
+  const picker=el("div","picker");picker.hidden=true;
+  sh.append(addBtn,picker);
+  addBtn.addEventListener("click",()=>{picker.hidden=!picker.hidden;renderPicker();});
+
+  function renderMods(){
+    modsBox.innerHTML="";
+    MORDER.filter(k=>st.mods.has(k)).forEach(k=>{
+      const card=el("div","mod");const head=el("div","mod-head");
+      head.appendChild(el("span","mod-name",MODS[k].name));
+      if(locked.has(k)) head.appendChild(el("span","mod-lock","고정"));
+      else {const x=el("button","mod-x","×");x.type="button";x.setAttribute("aria-label",MODS[k].name+" 빼기");
+        x.addEventListener("click",()=>{st.mods.delete(k);if(k==="repeat")st.mods.delete("plan");if(k==="due")due.value="";renderMods();});head.appendChild(x);}
+      const body=el("div","mod-body");MODS[k].body.forEach(n=>body.appendChild(n));
+      card.append(head,body);modsBox.appendChild(card);
+    });
+    const any=MORDER.some(k=>availability(k)!==false);
+    addBtn.hidden=!any;if(!any)picker.hidden=true;
+    renderPicker();sync();
+  }
+  function renderPicker(){
+    if(picker.hidden) return;
+    picker.innerHTML="";
+    MORDER.forEach(k=>{
+      const a=availability(k);if(a===false)return;
+      const p=el("button","pick");p.type="button";p.append(el("b",null,"+ "+MODS[k].name),el("span",null,a||MODS[k].desc));
+      p.disabled=!!a;
+      p.addEventListener("click",()=>{
+        st.mods.add(k);if(k==="plan")st.mods.add("repeat");
+        picker.hidden=true;renderMods();
+        const first=modsBox.querySelector(`.mod:nth-child(${MORDER.filter(x=>st.mods.has(x)).indexOf(k)+1}) input, .mod:nth-child(${MORDER.filter(x=>st.mods.has(x)).indexOf(k)+1}) select, .mod:nth-child(${MORDER.filter(x=>st.mods.has(x)).indexOf(k)+1}) button:not(.mod-x)`);
+        if(first&&k!=="due")first.focus();
+        preview();
+      });
+      picker.appendChild(p);
+    });
+  }
 
   function calc(){
     const T=parseInt(total.value,10),N=parseInt(span.value,10);
-    if(!st.days.length) return {err:"반복할 요일을 먼저 골라 주세요."};
+    if(!st.days.length) return {err:"반복 요일을 먼저 골라 주세요."};
     if(!(T>0)||!(N>0)) return {err:"총 분량과 기간을 넣으면 한 번에 할 분량을 계산해 드려요."};
     const n=countSessions(st.days,today(),N); if(!n) return {err:"이 기간 안에 고른 요일이 없어요. 기간을 늘려 주세요."};
     return {total:T,span:N,sessions:n,per:Math.ceil(T/n),unit:unit.value.trim()||"페이지"};
   }
   function preview(){
-    if(plan.hidden) return; const c=calc();
+    if(!st.mods.has("plan")||isQuestEdit) return; const c=calc();
     if(c.err){pv.textContent=c.err;pv.classList.add("err");return;}
     pv.classList.remove("err");const e=new Date();e.setDate(e.getDate()+c.span-1);
     pv.textContent=`총 ${c.sessions}회 · 한 번에 ${c.per}${c.unit}씩 (${e.getMonth()+1}/${e.getDate()}까지)`;
   }
-  function sync(){dueWrap.hidden=st.kind!=="task";qWrap.hidden=st.kind!=="quest";save1.textContent=editing?"저장":(st.kind==="quest"?"반복 퀘스트 추가":"할 일 추가");}
+  const isQuest=()=>st.mods.has("repeat");
+  function sync(){
+    pill.textContent=isQuest()?"반복 퀘스트":"할 일";
+    save1.textContent=editing?"저장":(isQuest()?"반복 퀘스트 추가":"할 일 추가");
+  }
 
   const br=el("div","btnrow");const save1=el("button","btn");save1.type="submit";br.appendChild(save1);
   if(editing){
-    const del=el("button","btn danger","삭제");del.type="button";let armed=false;
-    del.addEventListener("click",()=>{if(!armed){armed=true;del.textContent="한 번 더 누르면 삭제";return;}
-      if(st.kind==="task")S.items=S.items.filter(x=>x.id!==src.id);else S.quests=S.quests.filter(x=>x.id!==src.id);
+    const del=el("button","btn danger","삭제");del.type="button";
+    armButton(del,"한 번 더 누르면 삭제",()=>{
+      if(isQuestEdit)S.quests=S.quests.filter(x=>x.id!==src.id);else S.items=S.items.filter(x=>x.id!==src.id);
       save();closeSheet();render();toast("삭제했어요.");});
     br.appendChild(del);
   }
   sh.appendChild(br);
-  sync();
+  renderMods();
 
   sh.addEventListener("submit",e=>{
     e.preventDefault();
     const t=title.value.trim();if(!t){title.focus();return;}
     if(sub.value==="__new"){const n=newSub.value.trim();if(!n){newSub.focus();return;}if(!S.subs[st.group].includes(n))S.subs[st.group].push(n);st.sub=n;}
+    const mission=st.mods.has("mission")?mis.value:"";
+    const dueVal=st.mods.has("due")?(due.value||""):"";
+    const newLink=mission&&mission!==(src?src.mission:"");
     if(editing){
-      if(st.kind==="task"){src.text=t;src.due=due.value||"";}else src.title=t;
-      Object.assign(src,{group:st.group,sub:st.sub,mission:st.mission,prio:st.prio});
-      save();closeSheet();render();toast("저장했어요.");return;
+      if(isQuestEdit)src.title=t;else{src.text=t;src.due=dueVal;}
+      Object.assign(src,{group:st.group,sub:st.sub,mission,prio:st.prio});
+      save();closeSheet();render();toast(newLink?"저장했어요. 미션 경험치 +10":"저장했어요.");return;
     }
-    if(st.kind==="task"){
-      S.items.push({id:uid(),text:t,done:false,doneAt:"",group:st.group,sub:st.sub,mission:st.mission,prio:st.prio,due:due.value||"",created:Date.now()});
+    if(!isQuest()){
+      S.items.push({id:uid(),text:t,done:false,doneAt:"",group:st.group,sub:st.sub,mission,prio:st.prio,due:dueVal,created:Date.now()});
     } else {
-      if(!st.days.length){dErr.hidden=false;return;}
-      let p=null;if(st.usePlan){const c=calc();if(c.err){pv.textContent=c.err;pv.classList.add("err");return;}p={total:c.total,unit:c.unit,sessions:c.sessions,per:c.per,start:today()};}
-      S.quests.push({id:uid(),title:t,group:st.group,sub:st.sub,mission:st.mission,prio:st.prio,days:st.days.slice(),plan:p,log:{},created:Date.now()});
+      if(!st.days.length){dErr.hidden=false;dayBox.querySelector("button").focus();return;}
+      let p=null;if(st.mods.has("plan")){const c=calc();if(c.err){pv.textContent=c.err;pv.classList.add("err");total.focus();return;}p={total:c.total,unit:c.unit,sessions:c.sessions,per:c.per,start:today()};}
+      S.quests.push({id:uid(),title:t,group:st.group,sub:st.sub,mission,prio:st.prio,days:st.days.slice(),plan:p,log:{},created:Date.now()});
     }
+    if(o.fromWish){S.wishes=S.wishes.filter(w=>w.id!==o.fromWish);}
     save();closeSheet();render();
-    if(st.mission)xpToast(st.mission,10);else toast("추가했어요.");
+    if(o.fromWish)toast("위시를 할 일로 옮겼어요.");else if(mission)xpToast(mission,10);else toast("추가했어요.");
   });
   if(!editing) setTimeout(()=>title.focus(),50);
+}
+
+function wishSheet(sh,o){
+  const w=o.mode==="edit-wish"?S.wishes.find(x=>x.id===o.id):null;
+  sh.appendChild(el("h3",null,w?"위시 수정":"위시리스트에 추가"));
+  const text=el("input");text.type="text";text.id="w-text";text.maxLength=120;text.placeholder="예: 『듄』 영화 보기";text.value=w?w.text:"";
+  sh.appendChild(field("무엇을",text));
+  const kind=el("select");kind.id="w-kind";
+  const add=(v,t)=>{const op=el("option",null,t);op.value=v;kind.appendChild(op);};
+  add("","종류 없음");const kinds=S.wishKinds.slice();if(w&&w.kind&&!kinds.includes(w.kind))kinds.push(w.kind);kinds.forEach(k=>add(k,k));
+  kind.value=w?(w.kind||""):(o.kind||S.wishKinds[0]||"");
+  sh.appendChild(field("종류",kind));
+  const memo=el("textarea");memo.id="w-memo";memo.rows=2;memo.maxLength=300;memo.placeholder="메모 (예: 친구 추천, 넷플릭스에 있음)";memo.value=w?(w.memo||""):"";
+  sh.appendChild(field("메모",memo));
+  const br=el("div","btnrow");const sv=el("button","btn",w?"저장":"추가");sv.type="submit";br.appendChild(sv);
+  sh.appendChild(br);
+  if(w){
+    const br2=el("div","btnrow");
+    const mv=el("button","btn soft","할 일로 옮기기");mv.type="button";
+    mv.addEventListener("click",()=>{const t=text.value.trim()||w.text;openSheet({mode:"new",title:t,group:"input",fromWish:w.id});});
+    const dn=el("button","btn soft",w.done?"다시 위시로":"이뤘어요");dn.type="button";
+    dn.addEventListener("click",()=>{w.done=!w.done;w.doneAt=w.done?today():"";save();closeSheet();render();toast(w.done?"이뤘어요! '이룬 것'에 남겨 둘게요.":"다시 위시리스트로 옮겼어요.");});
+    const del=el("button","btn danger","삭제");del.type="button";
+    armButton(del,"한 번 더 누르면 삭제",()=>{S.wishes=S.wishes.filter(x=>x.id!==w.id);save();closeSheet();render();toast("삭제했어요.");});
+    br2.append(mv,dn,del);sh.appendChild(br2);
+  }
+  sh.addEventListener("submit",e=>{
+    e.preventDefault();const t=text.value.trim();if(!t){text.focus();return;}
+    if(w){w.text=t;w.kind=kind.value;w.memo=memo.value.trim();}
+    else S.wishes.push({id:uid(),text:t,kind:kind.value,memo:memo.value.trim(),done:false,created:Date.now()});
+    save();closeSheet();render();toast(w?"저장했어요.":"위시리스트에 담았어요.");
+  });
+  if(!w) setTimeout(()=>text.focus(),50);
 }
 document.addEventListener("keydown",e=>{if(e.key==="Escape")closeSheet();});
 
