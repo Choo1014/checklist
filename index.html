@@ -172,6 +172,9 @@ details.done-box .rows{margin-top:8px}
 .days{display:flex;gap:4px;flex-wrap:wrap}
 .days button{width:38px;height:38px;border:1px solid var(--line);border-radius:50%;font-size:.9rem}
 .days button[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--bg);font-weight:600}
+.quick{display:flex;gap:6px;flex-wrap:wrap}
+.quick button{padding:5px 12px;border:1px solid var(--line);border-radius:999px;font-size:.85rem;color:var(--muted)}
+.quick button:hover{color:var(--fg);border-color:var(--muted)}
 .toggle{display:flex;align-items:center;gap:8px;font-size:.92rem;cursor:pointer}
 .toggle input{width:18px;height:18px;accent-color:var(--accent)}
 .plan{display:flex;flex-direction:column;gap:8px;padding:10px;border-radius:10px;background:var(--bg)}
@@ -208,7 +211,8 @@ const GKEYS=["input","output","etc"];
 const GDESC={input:"독서·공부·영화·액티비티처럼 경험하고 받아들이는 것",output:"그림·글쓰기처럼 직접 만들어 내는 것",etc:"장보기·청소·서류처럼 자잘한 일"};
 const PRIO={3:"높음",2:"보통",1:"낮음"};
 let S={items:[],quests:[],missions:[],subs:{input:["독서","공부","영화","액티비티"],output:["그림","글쓰기","만들기"],etc:["생활","업무","약속"]}};
-let homeLimit=8;
+let homeLimit=8, homeMission="", homeTab="today";
+try{const ht=localStorage.getItem("checklist-hometab");if(ht==="all"||ht==="mission"||ht==="today")homeTab=ht;}catch(e){}
 
 const $=id=>document.getElementById(id);
 const el=(tag,cls,text)=>{const e=document.createElement(tag);if(cls)e.className=cls;if(text!=null)e.textContent=text;return e;};
@@ -375,28 +379,75 @@ function screenHome(v){
   v.appendChild(tiles);
 
   const t=today();
+  const TABS=[["today","오늘"],["all","전체"],["mission","메인 미션"]];
   const quests=S.quests.filter(isTodayQuest).map(q=>({...q,_quest:true,_ref:q}));
+  const pick={
+    today:o=>o._quest||(o.due&&o.due<=t),
+    all:()=>true,
+    mission:o=>(o._quest?o._ref.mission:o.mission)&&(!homeMission||(o._quest?o._ref.mission:o.mission)===homeMission)
+  }[homeTab];
   const open=S.items.filter(i=>!i.done);
   const doneToday=S.items.filter(i=>i.done&&i.doneAt===t);
-  const list=sortTasks([...quests.filter(q=>!q._ref.log[t]),...open]);
-  const finished=[...quests.filter(q=>q._ref.log[t]),...doneToday];
+  const list=sortTasks([...quests.filter(q=>!q._ref.log[t]),...open]).filter(pick);
+  const finished=[...quests.filter(q=>q._ref.log[t]),...doneToday].filter(homeTab==="today"?()=>true:pick);
   const total=list.length+finished.length;
 
-  const sec=el("div","sec");sec.append(el("h3",null,"할 일"),el("span",null,total?`오늘 완료 ${finished.length} · 남은 일 ${list.length}`:""));
+  const sec=el("div","sec");sec.append(el("h3",null,"할 일"),el("span",null,total?`완료 ${finished.length} · 남은 일 ${list.length}`:""));
   v.appendChild(sec);
-  const rows=el("div","rows");
-  if(!total){rows.appendChild(el("div","empty","할 일이 없어요. 오른쪽 아래 + 버튼으로 추가해 보세요."));}
-  list.slice(0,homeLimit).forEach(o=>rows.appendChild(o._quest?questRow(o._ref):taskRow(o,{showPrio:true})));
-  v.appendChild(rows);
+  const tabs=seg("tabs",TABS,homeTab,k=>{homeTab=k;homeLimit=8;try{localStorage.setItem("checklist-hometab",k);}catch(e){}render();});
+  v.appendChild(tabs);
+
+  const area=el("div","rows");
+  if(homeTab==="mission"){
+    if(!S.missions.length){
+      area.appendChild(el("div","empty","아직 메인 미션이 없어요. 위의 메인 미션 버튼에서 큰 목표를 먼저 만들어 보세요."));
+    } else {
+      const sel=el("select");sel.id="homeMission";sel.setAttribute("aria-label","메인 미션 선택");
+      const op=(val,txt)=>{const o=el("option",null,txt);o.value=val;sel.appendChild(o);};
+      op("","모든 메인 미션");S.missions.forEach(m=>op(m.id,"★ "+m.title));
+      if(homeMission&&!S.missions.some(m=>m.id===homeMission))homeMission="";
+      sel.value=homeMission;sel.addEventListener("change",()=>{homeMission=sel.value;homeLimit=8;render();});
+      area.appendChild(sel);
+    }
+  }
+  if(!total&&!(homeTab==="mission"&&!S.missions.length)){
+    let msg="할 일이 없어요. 오른쪽 아래 + 버튼으로 추가해 보세요.";
+    if(homeTab==="today"){
+      const upcoming=open.filter(i=>!i.due||i.due>t).length;
+      msg=upcoming?`오늘 할 일이 없어요. 남은 할 일 ${upcoming}개는 '전체'에서 볼 수 있어요.`:"오늘 할 일이 없어요. + 버튼으로 추가할 때 마감일을 '오늘'로 정하면 여기에 나와요.";
+    } else if(homeTab==="mission") msg="메인 미션에 연결된 할 일이 없어요. 할 일을 누르면 미션을 연결할 수 있어요.";
+    area.appendChild(el("div","empty",msg));
+  }
+  list.slice(0,homeLimit).forEach(o=>area.appendChild(o._quest?questRow(o._ref,{showMission:homeTab!=="mission"||!homeMission}):taskRow(o,{showPrio:true,showMission:homeTab!=="mission"||!homeMission})));
+  v.appendChild(area);
   if(list.length>homeLimit){
     const more=el("button","more",`더보기 (${list.length-homeLimit}개 더)`);more.type="button";
     more.addEventListener("click",()=>{homeLimit+=8;render();});
     v.appendChild(more);
   }
+  if(homeTab==="today"&&total){
+    const later=open.filter(i=>!i.due||i.due>t).length;
+    if(later){const h=el("button","more",`오늘 이후 할 일 ${later}개 보기 →`);h.type="button";h.addEventListener("click",()=>{homeTab="all";homeLimit=8;render();});v.appendChild(h);}
+  }
   if(finished.length){
     const d=el("details","done-box");d.appendChild(el("summary",null,`오늘 끝낸 일 ${finished.length}개`));
     const r=el("div","rows");finished.forEach(o=>r.appendChild(o._quest?questRow(o._ref):taskRow(o)));d.appendChild(r);v.appendChild(d);
   }
+
+  // 좌우로 밀어서 탭 넘기기
+  let sx=0,sy=0,tracking=false;
+  const zone=[tabs,area];
+  zone.forEach(z=>{
+    z.addEventListener("touchstart",e=>{if(e.target.closest("select"))return;tracking=true;sx=e.touches[0].clientX;sy=e.touches[0].clientY;},{passive:true});
+    z.addEventListener("touchend",e=>{
+      if(!tracking)return;tracking=false;
+      const dx=e.changedTouches[0].clientX-sx,dy=e.changedTouches[0].clientY-sy;
+      if(Math.abs(dx)<60||Math.abs(dx)<Math.abs(dy)*1.5)return;
+      const i=TABS.findIndex(x=>x[0]===homeTab),n=i+(dx<0?1:-1);
+      if(n<0||n>=TABS.length)return;
+      homeTab=TABS[n][0];homeLimit=8;try{localStorage.setItem("checklist-hometab",homeTab);}catch(err){}render();
+    },{passive:true});
+  });
 }
 
 function screenMissions(v){
@@ -628,7 +679,10 @@ function openSheet(o){
 
   // task-only
   const due=el("input");due.type="date";due.id="f-due";due.value=src&&src.due?src.due:"";
-  const dueWrap=field("희망 마감일",due);
+  const quick=el("div","quick");
+  [["오늘",0],["내일",1],["이번 주말",-1],["없음",null]].forEach(([l,n])=>{const b=el("button",null,l);b.type="button";
+    b.addEventListener("click",()=>{if(n===null){due.value="";return;}const d=new Date();if(n===-1){const add=(6-d.getDay()+7)%7;d.setDate(d.getDate()+add);}else d.setDate(d.getDate()+n);due.value=ymd(d);});quick.appendChild(b);});
+  const dueWrap=field("희망 마감일",due);dueWrap.appendChild(quick);
   sh.appendChild(dueWrap);
 
   // quest-only
