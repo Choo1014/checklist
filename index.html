@@ -14,11 +14,11 @@
 :root{
   --bg:#f2f4f1; --card:#ffffff; --fg:#1d2a24; --muted:#6c7a72; --line:#dfe5e0; --accent:#2f6b4f; --accent-soft:#e2eee7;
   --warn:#b4542d; --warn-soft:#f7e6dd; --gold:#b8860b; --gold-soft:#f6ecd2;
-  --in:#3c5f9e; --in-soft:#e4ebf7; --out:#9a4f2c; --out-soft:#f6e7de;
+  --in:#3c5f9e; --in-soft:#e4ebf7; --out:#9a4f2c; --out-soft:#f6e7de; --etc:#5d6670; --etc-soft:#e6e9ec;
   --hero:#dbe8e0; --hero-fg:#1d2a24; --hero-chip:rgba(255,255,255,.65); --hero-track:rgba(29,42,36,.12);
   --display:"Gowun Batang",Georgia,serif; --body:"IBM Plex Sans KR",-apple-system,"Apple SD Gothic Neo","Noto Sans KR",sans-serif;
 }
-@media (prefers-color-scheme:dark){:root{--bg:#141a17;--card:#1c2420;--fg:#e4ebe6;--muted:#93a29a;--line:#2c3732;--accent:#7cc39e;--accent-soft:#233229;--warn:#ef9a74;--warn-soft:#3a2720;--gold:#e9c46a;--gold-soft:#3a3320;--in:#8fb0ec;--in-soft:#1f2a3c;--out:#eba680;--out-soft:#3a2a21;--hero:#22302a;--hero-fg:#e4ebe6;--hero-chip:rgba(255,255,255,.07);--hero-track:rgba(255,255,255,.12);color-scheme:dark}}
+@media (prefers-color-scheme:dark){:root{--bg:#141a17;--card:#1c2420;--fg:#e4ebe6;--muted:#93a29a;--line:#2c3732;--accent:#7cc39e;--accent-soft:#233229;--warn:#ef9a74;--warn-soft:#3a2720;--gold:#e9c46a;--gold-soft:#3a3320;--in:#8fb0ec;--in-soft:#1f2a3c;--out:#eba680;--out-soft:#3a2a21;--etc:#b4bcc5;--etc-soft:#262d33;--hero:#22302a;--hero-fg:#e4ebe6;--hero-chip:rgba(255,255,255,.07);--hero-track:rgba(255,255,255,.12);color-scheme:dark}}
 *{box-sizing:border-box}
 html,body{margin:0}
 body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:16px;line-height:1.5;-webkit-tap-highlight-color:transparent}
@@ -57,6 +57,9 @@ main{max-width:560px;margin:0 auto;padding-inline:16px;padding-block:4px calc(en
 .tile{display:flex;flex-direction:column;align-items:flex-start;gap:6px;padding:16px;border-radius:16px;text-align:left;min-height:128px;border:1px solid transparent}
 .tile.input{background:var(--in-soft);color:var(--in)}
 .tile.output{background:var(--out-soft);color:var(--out)}
+.tile.etc{grid-column:1/-1;background:var(--etc-soft);color:var(--etc);min-height:0;flex-direction:row;align-items:center;flex-wrap:wrap;column-gap:10px;row-gap:2px;padding:14px 16px}
+.tile.etc .t-desc{flex:1 1 140px}
+.tile.etc .t-count{margin-top:0}
 .tile .numeral{font-family:var(--display);font-size:2.2rem;line-height:1}
 .tile .t-name{font-weight:600;font-size:1.1rem;color:var(--fg)}
 .tile .t-desc{font-size:.8rem;color:var(--muted);line-height:1.35}
@@ -82,6 +85,7 @@ main{max-width:560px;margin:0 auto;padding-inline:16px;padding-block:4px calc(en
 .tag{padding:1px 8px;border-radius:999px;white-space:nowrap;font-variant-numeric:tabular-nums}
 .tag.input{background:var(--in-soft);color:var(--in)}
 .tag.output{background:var(--out-soft);color:var(--out)}
+.tag.etc{background:var(--etc-soft);color:var(--etc)}
 .tag.plain{background:var(--accent-soft);color:var(--fg)}
 .tag.mission{background:var(--gold-soft);color:var(--gold)}
 .tag.late,.tag.today{background:var(--warn-soft);color:var(--warn)}
@@ -126,6 +130,8 @@ main{max-width:560px;margin:0 auto;padding-inline:16px;padding-block:4px calc(en
 .group-head{padding:16px;border-radius:16px;display:flex;flex-direction:column;gap:4px}
 .group-head.input{background:var(--in-soft)}
 .group-head.output{background:var(--out-soft)}
+.group-head.etc{background:var(--etc-soft)}
+.group-head.etc .numeral{color:var(--etc)}
 .group-head .numeral{font-family:var(--display);font-size:1.4rem}
 .group-head.input .numeral{color:var(--in)}
 .group-head.output .numeral{color:var(--out)}
@@ -159,6 +165,7 @@ details.done-box .rows{margin-top:8px}
 .seg button[aria-pressed="true"]{background:var(--card);color:var(--fg);font-weight:600;box-shadow:0 1px 2px rgba(0,0,0,.1)}
 .seg.group button[data-v=input][aria-pressed="true"]{background:var(--in-soft);color:var(--in)}
 .seg.group button[data-v=output][aria-pressed="true"]{background:var(--out-soft);color:var(--out)}
+.seg.group button[data-v=etc][aria-pressed="true"]{background:var(--etc-soft);color:var(--etc)}
 .seg.prio button[data-v="3"][aria-pressed="true"]{background:var(--warn-soft);color:var(--warn)}
 .seg.prio button[data-v="2"][aria-pressed="true"]{background:var(--gold-soft);color:var(--gold)}
 .two{display:grid;grid-template-columns:1fr 1fr;gap:10px}
@@ -196,10 +203,11 @@ details.done-box .rows{margin-top:8px}
 /* ================= data ================= */
 const LS="checklist-v4", OLD=["todo-items-v3","todo-items-v1"];
 const DAYS=["일","월","화","수","목","금","토"], ORDER=[1,2,3,4,5,6,0];
-const GROUPS={input:"인풋",output:"아웃풋"};
-const GDESC={input:"독서·공부·영화·액티비티처럼 경험하고 받아들이는 것",output:"그림·글쓰기처럼 직접 만들어 내는 것"};
+const GROUPS={input:"인풋",output:"아웃풋",etc:"기타"};
+const GKEYS=["input","output","etc"];
+const GDESC={input:"독서·공부·영화·액티비티처럼 경험하고 받아들이는 것",output:"그림·글쓰기처럼 직접 만들어 내는 것",etc:"장보기·청소·서류처럼 자잘한 일"};
 const PRIO={3:"높음",2:"보통",1:"낮음"};
-let S={items:[],quests:[],missions:[],subs:{input:["독서","공부","영화","액티비티"],output:["그림","글쓰기","만들기"]}};
+let S={items:[],quests:[],missions:[],subs:{input:["독서","공부","영화","액티비티"],output:["그림","글쓰기","만들기"],etc:["생활","업무","약속"]}};
 let homeLimit=8;
 
 const $=id=>document.getElementById(id);
@@ -219,14 +227,15 @@ function merge(d){
   if(!d) return;
   if(Array.isArray(d.items)) S.items=d.items.map(i=>{
     const o={...i};
-    if(o.group===undefined){const c=o.cat||"";delete o.cat;if(c==="영화"){o.group="input";o.sub="영화";}else if(c==="자기개발"){o.group="input";o.sub="공부";}else{o.group="";o.sub=c;}}
+    if(o.group===undefined){const c=o.cat||"";delete o.cat;if(c==="영화"){o.group="input";o.sub="영화";}else if(c==="자기개발"){o.group="input";o.sub="공부";}else{o.group="etc";o.sub=c;}}
+    if(!o.group)o.group="etc";
     if(!o.prio)o.prio=2; if(o.mission===undefined)o.mission="";
     if(o.done&&!o.doneAt)o.doneAt="";
     return o;
   });
-  if(Array.isArray(d.quests)) S.quests=d.quests.map(q=>({mission:"",prio:2,...q,log:q.log||{}}));
+  if(Array.isArray(d.quests)) S.quests=d.quests.map(q=>({mission:"",prio:2,...q,group:q.group||"etc",log:q.log||{}}));
   if(Array.isArray(d.missions)) S.missions=clone(d.missions);
-  if(d.subs&&d.subs.input&&d.subs.output) S.subs=clone(d.subs);
+  if(d.subs&&d.subs.input&&d.subs.output){const def=S.subs.etc;S.subs=clone(d.subs);if(!S.subs.etc)S.subs.etc=def;}
 }
 function save(){
   try{localStorage.setItem(LS,JSON.stringify({v:4,...S}));}catch(e){toast("저장 공간에 저장하지 못했어요.");}
@@ -356,7 +365,7 @@ function screenHome(v){
   v.appendChild(mb);
 
   const tiles=el("div","tiles");
-  ["input","output"].forEach((g,i)=>{
+  GKEYS.forEach((g,i)=>{
     const t=el("button","tile "+g);t.type="button";
     const open=S.items.filter(x=>x.group===g&&!x.done).length, tq=S.quests.filter(q=>q.group===g&&isTodayQuest(q)&&!q.log[today()]).length;
     t.append(el("span","t-name",GROUPS[g]),el("span","t-desc",GDESC[g]),el("span","t-count",`할 일 ${open}`+(tq?` · 오늘 퀘스트 ${tq}`:"")));
@@ -435,7 +444,7 @@ function screenMission(v,id){
   v.appendChild(r);
 }
 
-let groupFilter={input:"",output:""};
+let groupFilter={input:"",output:"",etc:""};
 function screenGroup(v,g){
   const head=el("div","group-head "+g);head.append(el("span","numeral",GROUPS[g]),el("p",null,GDESC[g]));
   v.appendChild(head);
@@ -473,7 +482,7 @@ function screenGroup(v,g){
 
 function screenSettings(v){
   const p=el("div","panel");p.appendChild(el("h3",null,"세부 카테고리"));
-  for(const g of ["input","output"]){
+  for(const g of GKEYS){
     p.appendChild(el("span","hint",GROUPS[g]));
     const row=el("div","subs");
     S.subs[g].forEach(s=>{
@@ -527,7 +536,7 @@ function render(){
   if(home){setTitle("");screenHome(v);}
   else if(r==="missions"){setTitle("메인 미션");screenMissions(v);}
   else if(r.startsWith("mission/")){screenMission(v,r.slice(8));}
-  else if(r==="input"||r==="output"){setTitle(GROUPS[r]);screenGroup(v,r);}
+  else if(GKEYS.includes(r)){setTitle(GROUPS[r]);screenGroup(v,r);}
   else if(r==="settings"){setTitle("설정");screenSettings(v);}
   else {go("home",true);return render();}
   window.scrollTo(0,y);
@@ -538,7 +547,7 @@ $("backBtn").addEventListener("click",()=>{if(history.length>1)history.back();el
 $("settingsBtn").addEventListener("click",()=>go("settings"));
 $("fab").addEventListener("click",()=>{
   const r=route();
-  openSheet({mode:"new",group:r==="input"||r==="output"?r:undefined,sub:(r==="input"||r==="output")?groupFilter[r]:"",mission:r.startsWith("mission/")?r.slice(8):""});
+  openSheet({mode:"new",group:GKEYS.includes(r)?r:undefined,sub:GKEYS.includes(r)?groupFilter[r]:"",mission:r.startsWith("mission/")?r.slice(8):""});
 });
 
 /* ================= toast ================= */
@@ -595,7 +604,7 @@ function openSheet(o){
   title.value=src?(src.text||src.title||""):"";
   sh.appendChild(field("제목",title));
 
-  sh.appendChild(field("큰 카테고리",seg("group",[["input","인풋"],["output","아웃풋"]],st.group,v=>{st.group=v;st.sub="";fillSubs();})));
+  sh.appendChild(field("큰 카테고리",seg("group",[["input","인풋"],["output","아웃풋"],["etc","기타"]],st.group,v=>{st.group=v;st.sub="";fillSubs();})));
   const sub=el("select");sub.id="f-sub";
   const newSub=el("input");newSub.type="text";newSub.id="f-newsub";newSub.placeholder="새 세부 카테고리 이름";newSub.maxLength=20;newSub.hidden=true;
   function fillSubs(){
