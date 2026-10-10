@@ -213,6 +213,24 @@ details.done-box .rows{margin-top:8px}
 .pick b{font-size:.9rem}
 .pick span{font-size:.75rem;color:var(--muted);line-height:1.35}
 .pick:disabled{opacity:.5;cursor:not-allowed}
+.filter-row{display:flex;gap:8px;align-items:center}
+.filter-row select{flex:1}
+.ghost-btn{padding:10px 12px;border:1px solid var(--line);border-radius:10px;font-size:.88rem;color:var(--muted);white-space:nowrap;background:var(--card)}
+.ghost-btn:hover{color:var(--fg);border-color:var(--muted)}
+.cat-list{display:flex;flex-direction:column;border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.cat-row{display:flex;align-items:center;gap:10px;padding:10px 10px 10px 12px;border-top:1px solid var(--line);background:var(--bg)}
+.cat-row:first-child{border-top:none}
+.cat-row .tag{font-size:.88rem;padding:2px 10px}
+.cat-count{flex:1;font-size:.8rem;color:var(--muted)}
+.cat-del{padding:6px 10px;font-size:.82rem;color:var(--warn);border-radius:8px;white-space:nowrap}
+.cat-del:hover{background:var(--warn-soft)}
+.move-btn{flex:none;display:flex;flex-direction:column;align-items:center;gap:1px;padding:6px 8px;border-radius:10px;color:var(--in);font-size:.7rem;font-weight:600}
+.move-btn:hover{background:var(--in-soft)}
+.move-btn svg{width:20px;height:20px}
+.cat-set{display:flex;flex-direction:column;gap:6px;padding-block:4px}
+.cat-set-head{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.cat-set-head b{font-size:.9rem}
+.cat-set-head .ghost-btn{padding:5px 10px;font-size:.8rem}
 .toggle{display:flex;align-items:center;gap:8px;font-size:.92rem;cursor:pointer}
 .toggle input{width:18px;height:18px;accent-color:var(--accent)}
 .plan{display:flex;flex-direction:column;gap:8px;padding:10px;border-radius:10px;background:var(--bg)}
@@ -248,7 +266,8 @@ const GROUPS={input:"인풋",output:"아웃풋",etc:"기타"};
 const GKEYS=["input","output","etc"];
 const GDESC={input:"독서·공부·영화·액티비티처럼 경험하고 받아들이는 것",output:"그림·글쓰기처럼 직접 만들어 내는 것",etc:"장보기·청소처럼 자잘한 일"};
 const PRIO={3:"높음",2:"보통",1:"낮음"};
-const WISH_KINDS=["보고 싶은 것","하고 싶은 것","가고 싶은 곳","갖고 싶은 것"];
+const OLD_WISH_KINDS=["보고 싶은 것","하고 싶은 것","가고 싶은 곳","갖고 싶은 것"];
+const WISH_KINDS=["영화","책","드라마","전시·공연","여행","맛집"];
 let S={items:[],quests:[],missions:[],wishes:[],wishKinds:WISH_KINDS.slice(),subs:{input:["독서","공부","영화","액티비티"],output:["그림","글쓰기","만들기"],etc:["생활","업무","약속"]}};
 let homeLimit=8, homeMission="", homeTab="today";
 try{const ht=localStorage.getItem("checklist-hometab");if(ht==="all"||ht==="mission"||ht==="today")homeTab=ht;}catch(e){}
@@ -278,8 +297,14 @@ function merge(d){
   });
   if(Array.isArray(d.quests)) S.quests=d.quests.map(q=>({mission:"",prio:2,...q,group:q.group||"etc",log:q.log||{}}));
   if(Array.isArray(d.missions)) S.missions=clone(d.missions);
-  if(Array.isArray(d.wishes)) S.wishes=clone(d.wishes);
-  if(Array.isArray(d.wishKinds)) S.wishKinds=d.wishKinds.slice();
+  if(Array.isArray(d.wishes)) S.wishes=clone(d.wishes).map(w=>({...w,done:false}));
+  if(Array.isArray(d.wishKinds)){
+    const k=d.wishKinds.slice();
+    if(k.length===OLD_WISH_KINDS.length&&k.every((x,i)=>x===OLD_WISH_KINDS[i])){ // 예전 기본 종류 → 새 세부 카테고리로
+      S.wishKinds=WISH_KINDS.slice();
+      S.wishes.forEach(w=>{if(w.kind&&!S.wishKinds.includes(w.kind))S.wishKinds.push(w.kind);});
+    } else S.wishKinds=k;
+  }
   if(d.subs&&d.subs.input&&d.subs.output){const def=S.subs.etc;S.subs=clone(d.subs);if(!S.subs.etc)S.subs.etc=def;}
 }
 function save(){
@@ -334,6 +359,50 @@ function deleteMission(m){
 function armButton(btn,confirmText,fn){
   let armed=false;const orig=btn.textContent;
   btn.addEventListener("click",()=>{if(!armed){armed=true;btn.textContent=confirmText;setTimeout(()=>{armed=false;btn.textContent=orig;},3000);return;}fn();});
+}
+
+/* ================= categories ================= */
+const SCOPE_NAME={input:"인풋",output:"아웃풋",etc:"기타",wish:"위시리스트"};
+const catsOf=sc=>sc==="wish"?S.wishKinds:S.subs[sc];
+function setCats(sc,arr){if(sc==="wish")S.wishKinds=arr;else S.subs[sc]=arr;}
+const usersOf=(sc,name)=>sc==="wish"?S.wishes.filter(w=>w.kind===name):[...S.items,...S.quests].filter(o=>o.group===sc&&o.sub===name);
+function removeCat(sc,name){
+  setCats(sc,catsOf(sc).filter(k=>k!==name));
+  usersOf(sc,name).forEach(o=>{if(sc==="wish")o.kind="";else o.sub="";});
+  if(sc==="wish"&&wishFilter===name)wishFilter="";
+  if(sc!=="wish"&&groupFilter[sc]===name)groupFilter[sc]="";
+  save();
+}
+function addCat(sc,name){name=name.trim();if(!name||catsOf(sc).includes(name))return false;catsOf(sc).push(name);save();return true;}
+function catEditBtn(sc){
+  const b=el("button","ghost-btn","카테고리 편집");b.type="button";
+  b.addEventListener("click",()=>openSheet({mode:"cats",scope:sc}));return b;
+}
+function catsSheet(sh,o){
+  const sc=o.scope;
+  sh.appendChild(el("h3",null,SCOPE_NAME[sc]+" 세부 카테고리"));
+  sh.appendChild(el("span","hint","잘못 만든 카테고리는 지울 수 있어요. 지우면 그 카테고리를 쓰던 항목은 '없음'으로 바뀌고 항목 자체는 남아요."));
+  const list=el("div","cat-list");sh.appendChild(list);
+  function draw(){
+    list.innerHTML="";
+    if(!catsOf(sc).length) list.appendChild(el("div","empty","세부 카테고리가 없어요. 아래에서 추가해 보세요."));
+    catsOf(sc).forEach(name=>{
+      const n=usersOf(sc,name).length;
+      const row=el("div","cat-row");
+      row.append(el("span","tag "+sc,name),el("span","cat-count",n?`${n}개 사용 중`:"사용 안 함"));
+      const del=el("button","cat-del","삭제");del.type="button";del.setAttribute("aria-label",name+" 삭제");
+      armButton(del,n?`${n}개 '없음'으로 · 삭제`:"한 번 더 누르면 삭제",()=>{removeCat(sc,name);draw();render();toast(`'${name}' 카테고리를 지웠어요.`);});
+      row.appendChild(del);list.appendChild(row);
+    });
+  }
+  draw();
+  const f=el("div","inline-form");
+  const i=el("input");i.type="text";i.id="cat-new";i.maxLength=20;i.placeholder="새 세부 카테고리 이름";i.setAttribute("aria-label","새 세부 카테고리 이름");
+  const b=el("button","btn soft","추가");b.type="submit";f.append(i,b);sh.appendChild(f);
+  const done=el("button","btn","완료");done.type="button";done.addEventListener("click",closeSheet);sh.appendChild(done);
+  sh.addEventListener("submit",e=>{e.preventDefault();const n=i.value.trim();if(!n){i.focus();return;}
+    if(!addCat(sc,n)){toast("이미 있는 카테고리예요.");i.select();return;}
+    i.value="";draw();render();i.focus();});
 }
 
 /* ================= shared row builders ================= */
@@ -618,45 +687,52 @@ function screenMission(v,id){
 
 /* ================= wishlist ================= */
 let wishFilter="";
+const ICON_MOVE='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h13M13 6l6 6-6 6"/></svg>';
 function screenWish(v){
-  const head=el("div","group-head wish");head.append(el("span","numeral","위시리스트"),el("p",null,"일정은 없어도 언젠가 보고 싶고, 하고 싶고, 가 보고 싶은 것들을 모아 두는 곳이에요."));
+  const head=el("div","group-head wish");head.append(el("span","numeral","위시리스트"),el("p",null,"언젠가 보고 싶은 영화, 읽고 싶은 책처럼 일정은 없지만 담아 두고 싶은 것들. 할 때가 되면 → 버튼으로 할 일에 옮겨요."));
   v.appendChild(head);
-  if(wishFilter&&!S.wishKinds.includes(wishFilter))wishFilter="";
+  if(wishFilter&&wishFilter!=="__none"&&!S.wishKinds.includes(wishFilter))wishFilter="";
   const f=el("form","inline-form");
-  const inp=el("input");inp.type="text";inp.id="newWish";inp.maxLength=120;inp.placeholder=(wishFilter||"보고 싶은 것")+" 적기";inp.setAttribute("aria-label","새 위시");
-  const b=el("button","btn","추가");b.type="submit";f.append(inp,b);
+  const inp=el("input");inp.type="text";inp.id="newWish";inp.maxLength=120;inp.placeholder=wishFilter&&wishFilter!=="__none"?`${wishFilter}에 담기`:"보고 싶은 것, 하고 싶은 것 담기";inp.setAttribute("aria-label","새 위시");
+  const b=el("button","btn","담기");b.type="submit";f.append(inp,b);
   f.addEventListener("submit",e=>{e.preventDefault();const t=inp.value.trim();if(!t){inp.focus();return;}
-    S.wishes.push({id:uid(),text:t,kind:wishFilter||S.wishKinds[0]||"",memo:"",done:false,created:Date.now()});save();render();setTimeout(()=>{const n=$("newWish");if(n)n.focus();},0);});
+    S.wishes.push({id:uid(),text:t,kind:wishFilter==="__none"?"":wishFilter,memo:"",done:false,created:Date.now()});save();render();setTimeout(()=>{const n=$("newWish");if(n)n.focus();},0);});
   v.appendChild(f);
-  const sel=el("select");sel.id="wishFilter";sel.setAttribute("aria-label","종류로 보기");
+  const fr=el("div","filter-row");
+  const sel=el("select");sel.id="wishFilter";sel.setAttribute("aria-label","세부 카테고리로 보기");
   const op=(val,t)=>{const o=el("option",null,t);o.value=val;sel.appendChild(o);};
-  op("","전체 종류");S.wishKinds.forEach(k=>op(k,k));sel.value=wishFilter;
+  op("","전체 세부 카테고리");S.wishKinds.forEach(k=>op(k,`${k} (${S.wishes.filter(w=>w.kind===k).length})`));
+  if(S.wishes.some(w=>!w.kind))op("__none","카테고리 없음");
+  sel.value=wishFilter;
   sel.addEventListener("change",()=>{wishFilter=sel.value;render();});
-  v.appendChild(sel);
-  const match=w=>!wishFilter||w.kind===wishFilter;
-  const open=S.wishes.filter(w=>!w.done&&match(w)).sort((a,b)=>b.created-a.created);
-  const done=S.wishes.filter(w=>w.done&&match(w)).sort((a,b)=>(b.doneAt||"").localeCompare(a.doneAt||""));
-  const sec=el("div","sec");sec.append(el("h3",null,"언젠가"),el("span",null,open.length?`${open.length}개`:""));v.appendChild(sec);
+  fr.append(sel,catEditBtn("wish"));v.appendChild(fr);
+  const match=w=>!wishFilter||(wishFilter==="__none"?!w.kind:w.kind===wishFilter);
+  const list=S.wishes.filter(match).sort((a,b)=>b.created-a.created);
+  const sec=el("div","sec");sec.append(el("h3",null,"담아 둔 것"),el("span",null,list.length?`${list.length}개`:""));v.appendChild(sec);
   const r=el("div","rows");
-  if(!open.length) r.appendChild(el("div","empty",S.wishes.length?"이 종류에는 아직 없어요.":"보고 싶은 영화, 가 보고 싶은 곳처럼 떠오르는 걸 적어 두세요."));
-  open.forEach(w=>r.appendChild(wishRow(w)));
+  if(!list.length) r.appendChild(el("div","empty",S.wishes.length?"이 카테고리에는 아직 없어요.":"보고 싶은 영화, 읽고 싶은 책처럼 떠오르는 걸 담아 두세요."));
+  list.forEach(w=>r.appendChild(wishRow(w)));
   v.appendChild(r);
-  if(done.length){
-    const d=el("details","done-box");d.appendChild(el("summary",null,`이룬 것 ${done.length}개`));
-    const rr=el("div","rows");done.forEach(w=>rr.appendChild(wishRow(w)));d.appendChild(rr);v.appendChild(d);
-  }
+}
+function moveWish(w){openSheet({mode:"new",title:w.text,group:"input",sub:wishToSub(w.kind),fromWish:w.id});}
+function wishToSub(kind){
+  if(!kind)return "";
+  if(S.subs.input.includes(kind))return kind;
+  const map={"책":"독서","드라마":"영화","전시·공연":"액티비티","여행":"액티비티"};
+  return map[kind]&&S.subs.input.includes(map[kind])?map[kind]:"";
 }
 function wishRow(w){
-  const c=el("div","row-card"+(w.done?" done":""));
+  const c=el("div","row-card");
   const main=el("button","row-main");main.type="button";
   main.appendChild(el("span","row-text",w.text));
   if(w.memo) main.appendChild(el("span","q-info",w.memo));
-  const m=el("span","meta");if(w.kind)m.appendChild(el("span","tag wish",w.kind));if(w.done&&w.doneAt)m.appendChild(el("span","tag plain",fmtDate(w.doneAt)+" 이룸"));
+  const m=el("span","meta");if(w.kind)m.appendChild(el("span","tag wish",w.kind));
   if(m.childNodes.length)main.appendChild(m);
   main.addEventListener("click",()=>openSheet({mode:"edit-wish",id:w.id}));
-  c.append(main,checkBtn(!!w.done,true,w.text+" 이뤘어요",()=>{
-    w.done=!w.done;w.doneAt=w.done?today():"";save();render();if(w.done)toast("이뤘어요! '이룬 것'에 남겨 둘게요.");
-  }));
+  const mv=el("button","move-btn");mv.type="button";mv.setAttribute("aria-label",w.text+" 할 일로 옮기기");
+  mv.innerHTML=ICON_MOVE;mv.appendChild(el("span",null,"할 일로"));
+  mv.addEventListener("click",()=>moveWish(w));
+  c.append(main,mv);
   return c;
 }
 
@@ -671,7 +747,7 @@ function screenGroup(v,g){
   if(!used.has(groupFilter[g])) groupFilter[g]="";
   sel.value=groupFilter[g];
   sel.addEventListener("change",()=>{groupFilter[g]=sel.value;render();});
-  v.appendChild(sel);
+  const fr=el("div","filter-row");fr.append(sel,catEditBtn(g));v.appendChild(fr);
   const f=groupFilter[g], match=o=>o.group===g&&(!f||o.sub===f);
 
   const qs=S.quests.filter(match);
@@ -698,31 +774,15 @@ function screenGroup(v,g){
 
 function screenSettings(v){
   const p=el("div","panel");p.appendChild(el("h3",null,"세부 카테고리"));
-  for(const g of GKEYS){
-    p.appendChild(el("span","hint",GROUPS[g]));
+  [...GKEYS,"wish"].forEach(sc=>{
+    const box=el("div","cat-set");
+    const hd=el("div","cat-set-head");hd.append(el("b",null,SCOPE_NAME[sc]),catEditBtn(sc));
     const row=el("div","subs");
-    S.subs[g].forEach(s=>{
-      const c=el("span","subchip tag "+g,s);const x=el("button",null,"×");x.type="button";x.setAttribute("aria-label",s+" 삭제");
-      x.addEventListener("click",()=>{S.subs[g]=S.subs[g].filter(k=>k!==s);[...S.items,...S.quests].forEach(o=>{if(o.group===g&&o.sub===s)o.sub="";});save();render();});
-      c.appendChild(x);row.appendChild(c);
-    });
-    p.appendChild(row);
-    const f=el("form","inline-form");const i=el("input");i.type="text";i.id="newsub-"+g;i.placeholder=GROUPS[g]+"에 새 세부 카테고리";i.maxLength=20;i.setAttribute("aria-label",GROUPS[g]+" 새 세부 카테고리");
-    const b=el("button","btn soft","추가");b.type="submit";f.append(i,b);
-    f.addEventListener("submit",e=>{e.preventDefault();const n=i.value.trim();if(!n||S.subs[g].includes(n))return;S.subs[g].push(n);save();render();});
-    p.appendChild(f);
-  }
+    if(!catsOf(sc).length)row.appendChild(el("span","hint","없음"));
+    catsOf(sc).forEach(k=>row.appendChild(el("span","tag "+sc,k)));
+    box.append(hd,row);p.appendChild(box);
+  });
   v.appendChild(p);
-
-  const wp=el("div","panel");wp.appendChild(el("h3",null,"위시리스트 종류"));
-  const wrow=el("div","subs");
-  S.wishKinds.forEach(k=>{const c=el("span","subchip tag wish",k);const x=el("button",null,"×");x.type="button";x.setAttribute("aria-label",k+" 삭제");
-    x.addEventListener("click",()=>{S.wishKinds=S.wishKinds.filter(z=>z!==k);S.wishes.forEach(w=>{if(w.kind===k)w.kind="";});save();render();});c.appendChild(x);wrow.appendChild(c);});
-  wp.appendChild(wrow);
-  const wf=el("form","inline-form");const wi=el("input");wi.type="text";wi.id="newWishKind";wi.placeholder="새 종류 (예: 배우고 싶은 것)";wi.maxLength=20;wi.setAttribute("aria-label","새 위시리스트 종류");
-  const wb=el("button","btn soft","추가");wb.type="submit";wf.append(wi,wb);
-  wf.addEventListener("submit",e=>{e.preventDefault();const n=wi.value.trim();if(!n||S.wishKinds.includes(n))return;S.wishKinds.push(n);save();render();});
-  wp.appendChild(wf);v.appendChild(wp);
 
   const b=el("div","panel");b.appendChild(el("h3",null,"백업 · 복원"));
   b.appendChild(el("span","hint","데이터는 이 폰에만 저장돼요. 가끔 백업 파일을 저장해 두면 폰을 바꿔도 그대로 옮길 수 있어요."));
@@ -815,6 +875,7 @@ function openSheet(o){
   }
 
   if(o.mode==="wish"||o.mode==="edit-wish"){wishSheet(sh,o);return;}
+  if(o.mode==="cats"){catsSheet(sh,o);return;}
 
   const editing=o.mode==="edit-task"||o.mode==="edit-quest";
   const isQuestEdit=o.mode==="edit-quest";
@@ -1003,36 +1064,38 @@ function openSheet(o){
 
 function wishSheet(sh,o){
   const w=o.mode==="edit-wish"?S.wishes.find(x=>x.id===o.id):null;
-  sh.appendChild(el("h3",null,w?"위시 수정":"위시리스트에 추가"));
-  const text=el("input");text.type="text";text.id="w-text";text.maxLength=120;text.placeholder="예: 『듄』 영화 보기";text.value=w?w.text:"";
+  sh.appendChild(el("h3",null,w?"위시 수정":"위시리스트에 담기"));
+  const text=el("input");text.type="text";text.id="w-text";text.maxLength=120;text.placeholder="예: 『듄: 파트 2』 보기";text.value=w?w.text:"";
   sh.appendChild(field("무엇을",text));
   const kind=el("select");kind.id="w-kind";
+  const newK=el("input");newK.type="text";newK.id="w-newkind";newK.maxLength=20;newK.placeholder="새 세부 카테고리 이름 (예: 애니)";newK.hidden=true;
   const add=(v,t)=>{const op=el("option",null,t);op.value=v;kind.appendChild(op);};
-  add("","종류 없음");const kinds=S.wishKinds.slice();if(w&&w.kind&&!kinds.includes(w.kind))kinds.push(w.kind);kinds.forEach(k=>add(k,k));
-  kind.value=w?(w.kind||""):(o.kind||S.wishKinds[0]||"");
-  sh.appendChild(field("종류",kind));
+  add("","없음");const kinds=S.wishKinds.slice();if(w&&w.kind&&!kinds.includes(w.kind))kinds.push(w.kind);kinds.forEach(k=>add(k,k));add("__new","+ 새로 추가…");
+  kind.value=w?(w.kind||""):(o.kind&&o.kind!=="__none"?o.kind:"");
+  kind.addEventListener("change",()=>{newK.hidden=kind.value!=="__new";if(!newK.hidden)newK.focus();});
+  const kf=el("div","field");kf.append(el("span","lbl","세부 카테고리"),kind,newK);sh.appendChild(kf);
   const memo=el("textarea");memo.id="w-memo";memo.rows=2;memo.maxLength=300;memo.placeholder="메모 (예: 친구 추천, 넷플릭스에 있음)";memo.value=w?(w.memo||""):"";
   sh.appendChild(field("메모",memo));
-  const br=el("div","btnrow");const sv=el("button","btn",w?"저장":"추가");sv.type="submit";br.appendChild(sv);
-  sh.appendChild(br);
+  const br=el("div","btnrow");const sv=el("button","btn",w?"저장":"담기");sv.type="submit";br.appendChild(sv);
   if(w){
-    const br2=el("div","btnrow");
     const mv=el("button","btn soft","할 일로 옮기기");mv.type="button";
-    mv.addEventListener("click",()=>{const t=text.value.trim()||w.text;openSheet({mode:"new",title:t,group:"input",fromWish:w.id});});
-    const dn=el("button","btn soft",w.done?"다시 위시로":"이뤘어요");dn.type="button";
-    dn.addEventListener("click",()=>{w.done=!w.done;w.doneAt=w.done?today():"";save();closeSheet();render();toast(w.done?"이뤘어요! '이룬 것'에 남겨 둘게요.":"다시 위시리스트로 옮겼어요.");});
+    mv.addEventListener("click",()=>{const t=text.value.trim();if(t)w.text=t;moveWish(w);});
     const del=el("button","btn danger","삭제");del.type="button";
     armButton(del,"한 번 더 누르면 삭제",()=>{S.wishes=S.wishes.filter(x=>x.id!==w.id);save();closeSheet();render();toast("삭제했어요.");});
-    br2.append(mv,dn,del);sh.appendChild(br2);
+    br.append(mv,del);
   }
+  sh.appendChild(br);
   sh.addEventListener("submit",e=>{
     e.preventDefault();const t=text.value.trim();if(!t){text.focus();return;}
-    if(w){w.text=t;w.kind=kind.value;w.memo=memo.value.trim();}
-    else S.wishes.push({id:uid(),text:t,kind:kind.value,memo:memo.value.trim(),done:false,created:Date.now()});
+    let k=kind.value;
+    if(k==="__new"){const n=newK.value.trim();if(!n){newK.focus();return;}addCat("wish",n);k=n;}
+    if(w){w.text=t;w.kind=k;w.memo=memo.value.trim();}
+    else S.wishes.push({id:uid(),text:t,kind:k,memo:memo.value.trim(),done:false,created:Date.now()});
     save();closeSheet();render();toast(w?"저장했어요.":"위시리스트에 담았어요.");
   });
   if(!w) setTimeout(()=>text.focus(),50);
 }
+
 document.addEventListener("keydown",e=>{if(e.key==="Escape")closeSheet();});
 
 /* ================= boot ================= */
