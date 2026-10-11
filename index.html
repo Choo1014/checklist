@@ -15,11 +15,13 @@
   --bg:#f2f4f1; --card:#ffffff; --fg:#1d2a24; --muted:#6c7a72; --line:#dfe5e0; --accent:#2f6b4f; --accent-soft:#e2eee7;
   --warn:#b4542d; --warn-soft:#f7e6dd; --gold:#b8860b; --gold-soft:#f6ecd2;
   --in:#3c5f9e; --in-soft:#e4ebf7; --out:#9a4f2c; --out-soft:#f6e7de; --etc:#5d6670; --etc-soft:#e6e9ec; --wish:#6b4fa0; --wish-soft:#ece6f5;
+  --h0:#b4473a; --h0s:#f7e3df; --h1:#b0601a; --h1s:#f8e7d6; --h2:#8a6d00; --h2s:#f5edcc; --h3:#3f7d3a; --h3s:#e1f0dd; --h4:#22776f; --h4s:#d9efec;
+  --h5:#3c5f9e; --h5s:#e0e9f7; --h6:#5a4fb0; --h6s:#e7e4f8; --h7:#8a46a8; --h7s:#f0e2f6; --h8:#b03f78; --h8s:#f8e0ec; --h9:#7a5a3a; --h9s:#efe6dc; --h10:#5d6670; --h10s:#e6e9ec;
   --wood:#c9a477; --wood-dark:#9c7748; --cabinet:#f6efe4; --bronze:#b0743c; --silver:#98a2ad; --goldcup:#d4a017;
   --hero:#dbe8e0; --hero-fg:#1d2a24; --hero-chip:rgba(255,255,255,.65); --hero-track:rgba(29,42,36,.12);
   --display:"Gowun Batang",Georgia,serif; --body:"IBM Plex Sans KR",-apple-system,"Apple SD Gothic Neo","Noto Sans KR",sans-serif;
 }
-@media (prefers-color-scheme:dark){:root{--bg:#141a17;--card:#1c2420;--fg:#e4ebe6;--muted:#93a29a;--line:#2c3732;--accent:#7cc39e;--accent-soft:#233229;--warn:#ef9a74;--warn-soft:#3a2720;--gold:#e9c46a;--gold-soft:#3a3320;--in:#8fb0ec;--in-soft:#1f2a3c;--out:#eba680;--out-soft:#3a2a21;--etc:#b4bcc5;--etc-soft:#262d33;--wish:#b9a1ec;--wish-soft:#2a2338;--wood:#7a5a3a;--wood-dark:#553e27;--cabinet:#211c17;--hero:#22302a;--hero-fg:#e4ebe6;--hero-chip:rgba(255,255,255,.07);--hero-track:rgba(255,255,255,.12);color-scheme:dark}}
+@media (prefers-color-scheme:dark){:root{--bg:#141a17;--card:#1c2420;--fg:#e4ebe6;--muted:#93a29a;--line:#2c3732;--accent:#7cc39e;--accent-soft:#233229;--warn:#ef9a74;--warn-soft:#3a2720;--gold:#e9c46a;--gold-soft:#3a3320;--in:#8fb0ec;--in-soft:#1f2a3c;--out:#eba680;--out-soft:#3a2a21;--etc:#b4bcc5;--etc-soft:#262d33;--h0:#f0998b;--h0s:#3d2421;--h1:#efaa6c;--h1s:#3b2a1b;--h2:#e3c45a;--h2s:#35301a;--h3:#8fcf86;--h3s:#1f3320;--h4:#6fd0c4;--h4s:#17332f;--h5:#8fb0ec;--h5s:#1f2a3c;--h6:#aaa2f0;--h6s:#272440;--h7:#d39cec;--h7s:#33213b;--h8:#f095c2;--h8s:#3b2030;--h9:#d2b08a;--h9s:#33281d;--h10:#b4bcc5;--h10s:#262d33;--wish:#b9a1ec;--wish-soft:#2a2338;--wood:#7a5a3a;--wood-dark:#553e27;--cabinet:#211c17;--hero:#22302a;--hero-fg:#e4ebe6;--hero-chip:rgba(255,255,255,.07);--hero-track:rgba(255,255,255,.12);color-scheme:dark}}
 *{box-sizing:border-box}
 html,body{margin:0}
 body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:16px;line-height:1.5;-webkit-tap-highlight-color:transparent}
@@ -73,9 +75,9 @@ main{max-width:560px;margin:0 auto;padding-inline:16px;padding-block:4px calc(en
 
 /* task rows (cards) */
 .rows{display:flex;flex-direction:column;gap:8px}
-.row-card{display:flex;align-items:center;gap:12px;padding:12px 12px 12px 16px;background:var(--card);border:1px solid var(--line);border-radius:14px}
-.row-card.p3{border-left:4px solid var(--warn)}
-.row-card.p2{border-left:4px solid var(--gold)}
+.row-card{display:flex;align-items:center;gap:12px;padding:10px 12px 10px 12px;background:var(--card);border:1px solid var(--line);border-radius:14px}
+.row-card.p3{box-shadow:inset 4px 0 0 var(--warn)}
+.row-card.p2{box-shadow:inset 4px 0 0 var(--gold)}
 .row-main{flex:1;min-width:0;display:flex;flex-direction:column;gap:4px;text-align:left;padding:0;border-radius:6px}
 .row-text{word-break:break-word;font-weight:500}
 .row-amount{font-size:.86rem}
@@ -139,7 +141,7 @@ main{max-width:560px;margin:0 auto;padding-inline:16px;padding-block:4px calc(en
 .group-head.input .numeral{color:var(--in)}
 .group-head.output .numeral{color:var(--out)}
 .group-head p{margin:0;font-size:.88rem;color:var(--muted)}
-.q-card{display:flex;flex-direction:column;gap:6px;padding:12px 16px;background:var(--card);border:1px solid var(--line);border-radius:14px;text-align:left;width:100%}
+.q-card{display:flex;flex-direction:row;align-items:center;gap:12px;padding:10px 12px;background:var(--card);border:1px solid var(--line);border-radius:14px;text-align:left;width:100%}
 .q-card .bar2{height:5px;border-radius:3px;background:var(--line);overflow:hidden}
 .q-card .bar2 span{display:block;height:100%;background:var(--accent)}
 .q-info{font-size:.82rem;color:var(--muted)}
@@ -231,6 +233,22 @@ details.done-box .rows{margin-top:8px}
 .cat-set-head{display:flex;justify-content:space-between;align-items:center;gap:8px}
 .cat-set-head b{font-size:.9rem}
 .cat-set-head .ghost-btn{padding:5px 10px;font-size:.8rem}
+.hue0{--hc:var(--h0);--hs:var(--h0s)}.hue1{--hc:var(--h1);--hs:var(--h1s)}.hue2{--hc:var(--h2);--hs:var(--h2s)}.hue3{--hc:var(--h3);--hs:var(--h3s)}.hue4{--hc:var(--h4);--hs:var(--h4s)}.hue5{--hc:var(--h5);--hs:var(--h5s)}.hue6{--hc:var(--h6);--hs:var(--h6s)}.hue7{--hc:var(--h7);--hs:var(--h7s)}.hue8{--hc:var(--h8);--hs:var(--h8s)}.hue9{--hc:var(--h9);--hs:var(--h9s)}.hue10{--hc:var(--h10);--hs:var(--h10s)}
+.tag.cat{background:var(--hs);color:var(--hc)}
+.cat-ico{width:46px;height:46px;flex:none;border-radius:13px;background:var(--hs);display:grid;place-content:center;font-size:1.6rem;line-height:1;box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--hc) 18%,transparent)}
+.row-card.done .cat-ico{opacity:.45;filter:grayscale(.6)}
+.q-body{flex:1;min-width:0;display:flex;flex-direction:column;gap:6px}
+.cat-row .ico-btn{width:38px;height:38px;border-radius:10px;background:var(--hs);font-size:1.3rem;display:grid;place-content:center;flex:none;border:1px dashed transparent}
+.cat-row .ico-btn:hover{border-color:var(--hc)}
+.cat-edit{display:flex;flex-direction:column;gap:10px;padding:10px 12px 12px;background:var(--card);border-top:1px solid var(--line)}
+.emoji-row{display:flex;gap:4px;flex-wrap:wrap}
+.emoji-row button{width:36px;height:36px;border-radius:9px;font-size:1.2rem;display:grid;place-content:center}
+.emoji-row button:hover,.emoji-row button[aria-pressed="true"]{background:var(--bg);box-shadow:inset 0 0 0 1px var(--line)}
+.emoji-in{display:flex;gap:8px;align-items:center}
+.emoji-in input{width:80px;text-align:center;font-size:1.2rem;padding:6px}
+.swatches{display:flex;gap:6px;flex-wrap:wrap}
+.swatches button{width:28px;height:28px;border-radius:50%;background:var(--hc);box-shadow:0 0 0 2px var(--card),0 0 0 3px transparent}
+.swatches button[aria-pressed="true"]{box-shadow:0 0 0 2px var(--card),0 0 0 4px var(--fg)}
 .toggle{display:flex;align-items:center;gap:8px;font-size:.92rem;cursor:pointer}
 .toggle input{width:18px;height:18px;accent-color:var(--accent)}
 .plan{display:flex;flex-direction:column;gap:8px;padding:10px;border-radius:10px;background:var(--bg)}
@@ -268,7 +286,7 @@ const GDESC={input:"독서·공부·영화·액티비티처럼 경험하고 받�
 const PRIO={3:"높음",2:"보통",1:"낮음"};
 const OLD_WISH_KINDS=["보고 싶은 것","하고 싶은 것","가고 싶은 곳","갖고 싶은 것"];
 const WISH_KINDS=["영화","책","드라마","전시·공연","여행","맛집"];
-let S={items:[],quests:[],missions:[],wishes:[],wishKinds:WISH_KINDS.slice(),subs:{input:["독서","공부","영화","액티비티"],output:["그림","글쓰기","만들기"],etc:["생활","업무","약속"]}};
+let S={catMeta:{},items:[],quests:[],missions:[],wishes:[],wishKinds:WISH_KINDS.slice(),subs:{input:["독서","공부","영화","액티비티"],output:["그림","글쓰기","만들기"],etc:["생활","업무","약속"]}};
 let homeLimit=8, homeMission="", homeTab="today";
 try{const ht=localStorage.getItem("checklist-hometab");if(ht==="all"||ht==="mission"||ht==="today")homeTab=ht;}catch(e){}
 
@@ -297,6 +315,7 @@ function merge(d){
   });
   if(Array.isArray(d.quests)) S.quests=d.quests.map(q=>({mission:"",prio:2,...q,group:q.group||"etc",log:q.log||{}}));
   if(Array.isArray(d.missions)) S.missions=clone(d.missions);
+  if(d.catMeta&&typeof d.catMeta==="object") S.catMeta=clone(d.catMeta);
   if(Array.isArray(d.wishes)) S.wishes=clone(d.wishes).map(w=>({...w,done:false}));
   if(Array.isArray(d.wishKinds)){
     const k=d.wishKinds.slice();
@@ -362,12 +381,28 @@ function armButton(btn,confirmText,fn){
 }
 
 /* ================= categories ================= */
+const EMOJI={"독서":"📚","책":"📚","공부":"✏️","영화":"🎬","드라마":"📺","애니":"🎞️","액티비티":"🏃","운동":"💪","그림":"🎨","글쓰기":"✍️","만들기":"🛠️","생활":"🏠","업무":"💼","약속":"🤝","전시·공연":"🎭","전시":"🖼️","공연":"🎭","여행":"✈️","맛집":"🍜","요리":"🍳","음악":"🎵","게임":"🎮","사진":"📷","코딩":"💻","쇼핑":"🛍️","청소":"🧹","언어":"🗣️","가고 싶은 곳":"🗺️"};
+const HUE={"영화":0,"만들기":1,"맛집":1,"글쓰기":2,"액티비티":3,"공부":4,"여행":4,"업무":5,"독서":6,"책":6,"약속":7,"전시·공연":7,"그림":8,"드라마":8,"생활":9};
+const SCOPE_DEF={input:{e:"💡",c:5},output:{e:"✨",c:1},etc:{e:"📌",c:10},wish:{e:"🌙",c:7}};
+const EMOJI_PICKS=["📚","✏️","🎬","📺","🎞️","🏃","💪","🎨","✍️","🛠️","🏠","💼","🤝","🎭","✈️","🍜","🍳","🎵","🎮","📷","💻","🛍️","🧹","🌱","💰","🧘","🗺️","⭐"];
+function hashHue(name){let h=0;for(const ch of name)h=(h*31+ch.codePointAt(0))>>>0;return h%10;}
+function metaOf(sc,name){
+  if(!name) return SCOPE_DEF[sc]||SCOPE_DEF.etc;
+  const m=S.catMeta[sc+":"+name]||{};
+  return {e:m.e||EMOJI[name]||(SCOPE_DEF[sc]||SCOPE_DEF.etc).e, c:m.c!=null?m.c:(HUE[name]!=null?HUE[name]:hashHue(name))};
+}
+function setMeta(sc,name,patch){const k=sc+":"+name;S.catMeta[k]={...(S.catMeta[k]||{}),...patch};save();}
+const scopeOfItem=o=>o.kind!==undefined&&o.group===undefined?"wish":(o.group||"etc");
+const catNameOf=o=>o.kind!==undefined&&o.group===undefined?o.kind:o.sub;
+function catIco(o){const sc=scopeOfItem(o),m=metaOf(sc,catNameOf(o));const i=el("span","cat-ico hue"+m.c,m.e);i.setAttribute("aria-hidden","true");return i;}
+const optLabel=(sc,name)=>metaOf(sc,name).e+" "+name;
 const SCOPE_NAME={input:"인풋",output:"아웃풋",etc:"기타",wish:"위시리스트"};
 const catsOf=sc=>sc==="wish"?S.wishKinds:S.subs[sc];
 function setCats(sc,arr){if(sc==="wish")S.wishKinds=arr;else S.subs[sc]=arr;}
 const usersOf=(sc,name)=>sc==="wish"?S.wishes.filter(w=>w.kind===name):[...S.items,...S.quests].filter(o=>o.group===sc&&o.sub===name);
 function removeCat(sc,name){
   setCats(sc,catsOf(sc).filter(k=>k!==name));
+  delete S.catMeta[sc+":"+name];
   usersOf(sc,name).forEach(o=>{if(sc==="wish")o.kind="";else o.sub="";});
   if(sc==="wish"&&wishFilter===name)wishFilter="";
   if(sc!=="wish"&&groupFilter[sc]===name)groupFilter[sc]="";
@@ -381,18 +416,39 @@ function catEditBtn(sc){
 function catsSheet(sh,o){
   const sc=o.scope;
   sh.appendChild(el("h3",null,SCOPE_NAME[sc]+" 세부 카테고리"));
-  sh.appendChild(el("span","hint","잘못 만든 카테고리는 지울 수 있어요. 지우면 그 카테고리를 쓰던 항목은 '없음'으로 바뀌고 항목 자체는 남아요."));
+  sh.appendChild(el("span","hint","왼쪽 아이콘을 누르면 이모티콘과 색을 바꿀 수 있어요. 지우면 그 카테고리를 쓰던 항목은 '없음'으로 바뀌고 항목 자체는 남아요."));
+  let openEdit="";
   const list=el("div","cat-list");sh.appendChild(list);
   function draw(){
     list.innerHTML="";
     if(!catsOf(sc).length) list.appendChild(el("div","empty","세부 카테고리가 없어요. 아래에서 추가해 보세요."));
     catsOf(sc).forEach(name=>{
       const n=usersOf(sc,name).length;
+      const mt=metaOf(sc,name);
+      const wrap=el("div","hue"+mt.c);
       const row=el("div","cat-row");
-      row.append(el("span","tag "+sc,name),el("span","cat-count",n?`${n}개 사용 중`:"사용 안 함"));
+      const ib=el("button","ico-btn",mt.e);ib.type="button";ib.setAttribute("aria-label",name+" 아이콘과 색 바꾸기");ib.setAttribute("aria-expanded",String(openEdit===name));
+      ib.addEventListener("click",()=>{openEdit=openEdit===name?"":name;draw();});
+      row.append(ib,el("span","tag cat",name),el("span","cat-count",n?`${n}개`:"사용 안 함"));
       const del=el("button","cat-del","삭제");del.type="button";del.setAttribute("aria-label",name+" 삭제");
       armButton(del,n?`${n}개 '없음'으로 · 삭제`:"한 번 더 누르면 삭제",()=>{removeCat(sc,name);draw();render();toast(`'${name}' 카테고리를 지웠어요.`);});
-      row.appendChild(del);list.appendChild(row);
+      row.appendChild(del);wrap.appendChild(row);
+      if(openEdit===name){
+        const ed=el("div","cat-edit");
+        const er=el("div","emoji-row");
+        EMOJI_PICKS.forEach(e=>{const b=el("button",null,e);b.type="button";b.setAttribute("aria-pressed",String(e===mt.e));b.addEventListener("click",()=>{setMeta(sc,name,{e});draw();render();});er.appendChild(b);});
+        const ei=el("div","emoji-in");const inp=el("input");inp.type="text";inp.id="emoji-"+name;inp.placeholder=mt.e;inp.setAttribute("aria-label","직접 입력한 이모티콘");
+        const ok=el("button","btn soft","적용");ok.type="button";
+        ok.addEventListener("click",()=>{const v=inp.value.trim();if(!v){inp.focus();return;}
+          let g=v;try{g=[...new Intl.Segmenter("ko",{granularity:"grapheme"}).segment(v)][0].segment;}catch(e){g=[...v][0];}
+          setMeta(sc,name,{e:g});draw();render();});
+        ei.append(el("span","cat-count","직접 입력"),inp,ok);
+        const sw=el("div","swatches");
+        for(let k=0;k<11;k++){const b=el("button","hue"+k);b.type="button";b.setAttribute("aria-label",`색 ${k+1}`);b.setAttribute("aria-pressed",String(k===mt.c));
+          b.addEventListener("click",()=>{setMeta(sc,name,{c:k});draw();render();});sw.appendChild(b);}
+        ed.append(er,ei,sw);wrap.appendChild(ed);
+      }
+      list.appendChild(wrap);
     });
   }
   draw();
@@ -408,7 +464,7 @@ function catsSheet(sh,o){
 /* ================= shared row builders ================= */
 function tagsFor(o,{showMission=true}={}){
   const m=el("span","meta");
-  if(o.group){m.appendChild(el("span","tag "+o.group,GROUPS[o.group]+(o.sub?" · "+o.sub:"")));}
+  if(o.group){m.appendChild(el("span","tag cat hue"+metaOf(o.group,o.sub).c,GROUPS[o.group]+(o.sub?" · "+o.sub:"")));}
   if(showMission&&o.mission){const mi=S.missions.find(x=>x.id===o.mission);if(mi)m.appendChild(el("span","tag mission","★ "+mi.title));}
   return m;
 }
@@ -430,7 +486,7 @@ function taskRow(it,opts={}){
   if(it.prio==3&&!it.done) m.prepend(el("span","tag late","중요"));
   if(m.childNodes.length) main.appendChild(m);
   main.addEventListener("click",()=>openSheet({mode:"edit-task",id:it.id}));
-  c.append(main,checkBtn(!!it.done,false,it.text+" 완료",()=>{
+  c.append(catIco(it),main,checkBtn(!!it.done,false,it.text+" 완료",()=>{
     it.done=!it.done; it.doneAt=it.done?today():"";
     if(it.done&&it.mission) xpToast(it.mission,30);
     save(); render();
@@ -446,24 +502,26 @@ function questRow(q,opts={}){
   const m=tagsFor(q,opts); m.prepend(el("span","tag quest","↻ 오늘 퀘스트"));
   main.appendChild(m);
   main.addEventListener("click",()=>openSheet({mode:"edit-quest",id:q.id}));
-  c.append(main,checkBtn(on,true,q.title+" 오늘 완료",()=>{
+  c.append(catIco(q),main,checkBtn(on,true,q.title+" 오늘 완료",()=>{
     if(on) delete q.log[t]; else {q.log[t]=true; if(q.mission) xpToast(q.mission,15);}
     save(); render();
   }));
   return c;
 }
 function questCard(q){
-  const b=el("button","q-card"); b.type="button";
-  b.appendChild(el("span","row-text",q.title));
+  const card=el("button","q-card"); card.type="button";
+  const body=el("span","q-body");
+  body.appendChild(el("span","row-text",q.title));
   const ds=ORDER.filter(d=>q.days.includes(d)).map(d=>DAYS[d]).join("·");
   if(q.plan){
     const n=Math.min(doneTotal(q),q.plan.sessions);
-    b.appendChild(el("span","q-info",`${ds} · ${q.plan.total}${q.plan.unit}를 ${q.plan.sessions}회에 · `+(n>=q.plan.sessions?"모두 완료":`${n}/${q.plan.sessions}회`)));
-    const bar=el("div","bar2"),s=el("span");s.style.width=(n/q.plan.sessions*100)+"%";bar.appendChild(s);b.appendChild(bar);
-  } else b.appendChild(el("span","q-info",`${ds} 반복 · ${doneTotal(q)}회 완료`+(isTodayQuest(q)?" · 오늘":` · 다음: ${nextDay(q)}`)));
-  b.appendChild(tagsFor(q));
-  b.addEventListener("click",()=>openSheet({mode:"edit-quest",id:q.id}));
-  return b;
+    body.appendChild(el("span","q-info",`${ds} · ${q.plan.total}${q.plan.unit}를 ${q.plan.sessions}회에 · `+(n>=q.plan.sessions?"모두 완료":`${n}/${q.plan.sessions}회`)));
+    const bar=el("div","bar2"),s=el("span");s.style.width=(n/q.plan.sessions*100)+"%";bar.appendChild(s);body.appendChild(bar);
+  } else body.appendChild(el("span","q-info",`${ds} 반복 · ${doneTotal(q)}회 완료`+(isTodayQuest(q)?" · 오늘":` · 다음: ${nextDay(q)}`)));
+  body.appendChild(tagsFor(q));
+  card.append(catIco(q),body);
+  card.addEventListener("click",()=>openSheet({mode:"edit-quest",id:q.id}));
+  return card;
 }
 function sortTasks(arr){
   return arr.slice().sort((a,b)=>{
@@ -701,7 +759,7 @@ function screenWish(v){
   const fr=el("div","filter-row");
   const sel=el("select");sel.id="wishFilter";sel.setAttribute("aria-label","세부 카테고리로 보기");
   const op=(val,t)=>{const o=el("option",null,t);o.value=val;sel.appendChild(o);};
-  op("","전체 세부 카테고리");S.wishKinds.forEach(k=>op(k,`${k} (${S.wishes.filter(w=>w.kind===k).length})`));
+  op("","전체 세부 카테고리");S.wishKinds.forEach(k=>op(k,`${optLabel("wish",k)} (${S.wishes.filter(w=>w.kind===k).length})`));
   if(S.wishes.some(w=>!w.kind))op("__none","카테고리 없음");
   sel.value=wishFilter;
   sel.addEventListener("change",()=>{wishFilter=sel.value;render();});
@@ -726,13 +784,13 @@ function wishRow(w){
   const main=el("button","row-main");main.type="button";
   main.appendChild(el("span","row-text",w.text));
   if(w.memo) main.appendChild(el("span","q-info",w.memo));
-  const m=el("span","meta");if(w.kind)m.appendChild(el("span","tag wish",w.kind));
+  const m=el("span","meta");if(w.kind)m.appendChild(el("span","tag cat hue"+metaOf("wish",w.kind).c,w.kind));
   if(m.childNodes.length)main.appendChild(m);
   main.addEventListener("click",()=>openSheet({mode:"edit-wish",id:w.id}));
   const mv=el("button","move-btn");mv.type="button";mv.setAttribute("aria-label",w.text+" 할 일로 옮기기");
   mv.innerHTML=ICON_MOVE;mv.appendChild(el("span",null,"할 일로"));
   mv.addEventListener("click",()=>moveWish(w));
-  c.append(main,mv);
+  c.append(catIco(w),main,mv);
   return c;
 }
 
@@ -743,7 +801,7 @@ function screenGroup(v,g){
   const sel=el("select");sel.id="gfilter-"+g;sel.setAttribute("aria-label","세부 카테고리");
   const used=new Set(S.subs[g]);[...S.items,...S.quests].forEach(o=>{if(o.group===g&&o.sub)used.add(o.sub);});
   const opt=(val,t)=>{const o=el("option",null,t);o.value=val;sel.appendChild(o);};
-  opt("","전체 세부 카테고리");used.forEach(s=>opt(s,s));
+  opt("","전체 세부 카테고리");used.forEach(s=>opt(s,optLabel(g,s)));
   if(!used.has(groupFilter[g])) groupFilter[g]="";
   sel.value=groupFilter[g];
   sel.addEventListener("change",()=>{groupFilter[g]=sel.value;render();});
@@ -779,7 +837,7 @@ function screenSettings(v){
     const hd=el("div","cat-set-head");hd.append(el("b",null,SCOPE_NAME[sc]),catEditBtn(sc));
     const row=el("div","subs");
     if(!catsOf(sc).length)row.appendChild(el("span","hint","없음"));
-    catsOf(sc).forEach(k=>row.appendChild(el("span","tag "+sc,k)));
+    catsOf(sc).forEach(k=>row.appendChild(el("span","tag cat hue"+metaOf(sc,k).c,optLabel(sc,k))));
     box.append(hd,row);p.appendChild(box);
   });
   v.appendChild(p);
@@ -805,7 +863,7 @@ function screenSettings(v){
 }
 function restore(text){
   try{const d=JSON.parse(text);if(!d||(!Array.isArray(d.items)&&!Array.isArray(d.quests)&&!Array.isArray(d.wishes)))throw 0;
-    S={items:[],quests:[],missions:[],wishes:[],wishKinds:S.wishKinds,subs:S.subs};merge(d);save();render();toast("복원했어요.");}
+    S={catMeta:{},items:[],quests:[],missions:[],wishes:[],wishKinds:S.wishKinds,subs:S.subs};merge(d);save();render();toast("복원했어요.");}
   catch(e){toast("백업 내용을 읽지 못했어요. 파일을 확인해 주세요.");}
 }
 
@@ -907,7 +965,7 @@ function openSheet(o){
   const newSub=el("input");newSub.type="text";newSub.id="f-newsub";newSub.placeholder="새 세부 카테고리 이름";newSub.maxLength=20;newSub.hidden=true;
   function fillSubs(){
     sub.innerHTML="";const add=(v,t)=>{const op=el("option",null,t);op.value=v;sub.appendChild(op);};
-    add("","없음");const list=S.subs[st.group].slice();if(st.sub&&!list.includes(st.sub))list.push(st.sub);list.forEach(s=>add(s,s));add("__new","+ 새로 추가…");
+    add("","없음");const list=S.subs[st.group].slice();if(st.sub&&!list.includes(st.sub))list.push(st.sub);list.forEach(s=>add(s,optLabel(st.group,s)));add("__new","+ 새로 추가…");
     sub.value=st.sub;newSub.hidden=true;
   }
   sub.addEventListener("change",()=>{newSub.hidden=sub.value!=="__new";if(sub.value!=="__new")st.sub=sub.value;else newSub.focus();});
@@ -1070,7 +1128,7 @@ function wishSheet(sh,o){
   const kind=el("select");kind.id="w-kind";
   const newK=el("input");newK.type="text";newK.id="w-newkind";newK.maxLength=20;newK.placeholder="새 세부 카테고리 이름 (예: 애니)";newK.hidden=true;
   const add=(v,t)=>{const op=el("option",null,t);op.value=v;kind.appendChild(op);};
-  add("","없음");const kinds=S.wishKinds.slice();if(w&&w.kind&&!kinds.includes(w.kind))kinds.push(w.kind);kinds.forEach(k=>add(k,k));add("__new","+ 새로 추가…");
+  add("","없음");const kinds=S.wishKinds.slice();if(w&&w.kind&&!kinds.includes(w.kind))kinds.push(w.kind);kinds.forEach(k=>add(k,optLabel("wish",k)));add("__new","+ 새로 추가…");
   kind.value=w?(w.kind||""):(o.kind&&o.kind!=="__none"?o.kind:"");
   kind.addEventListener("change",()=>{newK.hidden=kind.value!=="__new";if(!newK.hidden)newK.focus();});
   const kf=el("div","field");kf.append(el("span","lbl","세부 카테고리"),kind,newK);sh.appendChild(kf);
