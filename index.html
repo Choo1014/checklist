@@ -293,6 +293,7 @@ details.done-box .rows{margin-top:8px}
 (function(){
 "use strict";
 /* ================= data ================= */
+const APP_VERSION="v11";
 const LS="checklist-v4", OLD=["todo-items-v3","todo-items-v1"];
 const DAYS=["일","월","화","수","목","금","토"], ORDER=[1,2,3,4,5,6,0];
 const GROUPS={input:"인풋",output:"아웃풋",etc:"기타"};
@@ -891,6 +892,14 @@ function screenSettings(v){
   });
   v.appendChild(p);
 
+  const vp=el("div","panel");vp.appendChild(el("h3",null,"앱 정보"));
+  const vr=el("div","cat-set-head");vr.append(el("span","hint","버전 "+APP_VERSION+" · 새 기능이 안 보이면 눌러 주세요"));
+  const ub=el("button","ghost-btn","업데이트 확인");ub.type="button";
+  ub.addEventListener("click",async()=>{ub.textContent="확인 중…";
+    try{if(swReg)await swReg.update();const ks=await caches.keys();await Promise.all(ks.map(k=>caches.delete(k)));}catch(e){}
+    location.reload();});
+  vr.appendChild(ub);vp.appendChild(vr);v.appendChild(vp);
+
   const b=el("div","panel");b.appendChild(el("h3",null,"백업 · 복원"));
   b.appendChild(el("span","hint","데이터는 이 폰에만 저장돼요. 가끔 백업 파일을 저장해 두면 폰을 바꿔도 그대로 옮길 수 있어요."));
   const br=el("div","btnrow");
@@ -1294,7 +1303,18 @@ load(); render();
 let lastDay=today();
 setInterval(()=>{if(today()!==lastDay){lastDay=today();render();}},60000);
 document.addEventListener("visibilitychange",()=>{if(!document.hidden&&today()!==lastDay){lastDay=today();render();}});
-if("serviceWorker" in navigator){window.addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(()=>{}));}
+/* 업데이트: 앱을 다시 켜거나 다시 볼 때마다 새 버전을 확인하고, 있으면 바로 바꿔요 */
+let swReg=null;
+if("serviceWorker" in navigator){
+  const hadController=!!navigator.serviceWorker.controller;let reloading=false;
+  window.addEventListener("load",()=>navigator.serviceWorker.register("sw.js",{updateViaCache:"none"}).then(r=>{swReg=r;}).catch(()=>{}));
+  navigator.serviceWorker.addEventListener("controllerchange",()=>{
+    if(!hadController||reloading)return;reloading=true;
+    if(!$("sheetRoot").firstChild){location.reload();}
+    else toast("새 버전이 준비됐어요. 창을 닫으면 적용돼요.");
+  });
+  document.addEventListener("visibilitychange",()=>{if(!document.hidden&&swReg)swReg.update().catch(()=>{});});
+}
 })();
 </script>
 </body>
