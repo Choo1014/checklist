@@ -253,6 +253,17 @@ details.done-box .rows{margin-top:8px}
 .swatches{display:flex;gap:6px;flex-wrap:wrap}
 .swatches button{width:28px;height:28px;border-radius:50%;background:var(--hc);box-shadow:0 0 0 2px var(--card),0 0 0 3px transparent}
 .swatches button[aria-pressed="true"]{box-shadow:0 0 0 2px var(--card),0 0 0 4px var(--fg)}
+.read-bar{height:5px;border-radius:3px;background:var(--line);overflow:hidden;max-width:220px}
+.read-bar span{display:block;height:100%;background:var(--hc,var(--accent))}
+.read-stat{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.read-stat div{display:flex;flex-direction:column;align-items:center;padding:8px 4px;border-radius:10px;background:var(--bg)}
+.read-stat b{font-size:1.1rem;font-variant-numeric:tabular-nums}
+.read-stat span{font-size:.72rem;color:var(--muted)}
+.page-in{display:flex;align-items:center;gap:8px}
+.page-in input{font-size:1.4rem;font-weight:600;text-align:center;max-width:140px}
+.page-in span{color:var(--muted)}
+.dates{display:grid;grid-template-columns:1fr auto 1fr;gap:6px;align-items:center}
+.dates span{color:var(--muted);font-size:.85rem}
 .toggle{display:flex;align-items:center;gap:8px;font-size:.92rem;cursor:pointer}
 .toggle input{width:18px;height:18px;accent-color:var(--accent)}
 .plan{display:flex;flex-direction:column;gap:8px;padding:10px;border-radius:10px;background:var(--bg)}
@@ -340,8 +351,31 @@ const doneBefore=(q,day)=>Object.keys(q.log||{}).filter(k=>q.log[k]&&k<day).leng
 const doneTotal=q=>Object.keys(q.log||{}).filter(k=>q.log[k]).length;
 function chunk(q,day){const p=q.plan,idx=doneBefore(q,day);const from=idx*p.per+1,to=Math.min(p.total,(idx+1)*p.per);return{idx,from,to,amt:to-from+1};}
 const finished=q=>q.plan&&doneTotal(q)>=q.plan.sessions;
+/* 독서 계획: 남은 쪽수를 남은 읽는 날로 매번 다시 나눠요 (밀리거나 앞서가도 자동 조정) */
+function readDaysFrom(q,from){
+  const r=q.read;let n=0;const d=parse(from>r.start?from:r.start),e=parse(r.end);
+  while(d<=e){if(q.days.includes(d.getDay()))n++;d.setDate(d.getDate()+1);}return n;
+}
+function readToday(q){
+  const r=q.read,t=today(),h=r.hist&&r.hist[t];
+  const base=h?h.from:r.cur, remain=Math.max(0,r.total-base), overdue=t>r.end;
+  const left=overdue?1:Math.max(1,readDaysFrom(q,t));
+  const per=Math.ceil(remain/left);
+  return {base,target:Math.min(r.total,base+per),per,remain,overdue,left:overdue?0:readDaysFrom(q,t),logged:!!h};
+}
+function setReadPage(q,p){
+  const r=q.read,t=today();r.hist=r.hist||{};
+  const h=r.hist[t],base=h?h.from:r.cur,was=!!h;
+  p=Math.max(0,Math.min(r.total,Math.round(p)));
+  if(p>base){r.hist[t]={from:base,to:p};q.log[t]=true;}
+  else {delete r.hist[t];delete q.log[t];}
+  r.cur=p;
+  if(!was&&q.log[t]&&q.mission)xpToast(q.mission,15);
+  if(r.cur>=r.total&&base<r.total)toast(`『${q.title.replace(/[『』]/g,"")}』 완독했어요!`);
+}
 function isTodayQuest(q){
   const t=today(); if(!q.days.includes(new Date().getDay())) return false;
+  if(q.read){if(t<q.read.start)return false;const h=q.read.hist&&q.read.hist[t];return (h?h.from:q.read.cur)<q.read.total;}
   if(q.plan&&t<q.plan.start) return false;
   if(q.plan&&doneBefore(q,t)>=q.plan.sessions) return false;
   return true;
@@ -496,14 +530,23 @@ function taskRow(it,opts={}){
 }
 function questRow(q,opts={}){
   const t=today(), on=!!q.log[t];
-  const c=el("div","row-card"+(on?" done":"")+(!on&&q.prio==3?" p3":""));
+  const c=el("div","row-card"+(on?" done":"")+(!on&&q.prio==3?" p3":"")+" hue"+metaOf(q.group,q.sub).c);
   const main=el("button","row-main"); main.type="button";
   main.appendChild(el("span","row-text",q.title));
+  if(q.read){
+    const r=q.read,ri=readToday(q);
+    const a=el("span","row-amount");
+    a.append(el("b",null,`${r.cur} / ${r.total}쪽`)," ",el("span",null,on?`· 오늘 ${r.cur-ri.base}쪽 읽음`:`· 오늘 ${ri.target}쪽까지 (${ri.target-ri.base}쪽)`));
+    main.appendChild(a);
+    const bar=el("div","bar2 read-bar"),sp=el("span");sp.style.width=(r.cur/r.total*100)+"%";bar.appendChild(sp);main.appendChild(bar);
+  }
   if(q.plan){const ch=chunk(q,t);const a=el("span","row-amount");a.append("오늘 ",el("b",null,`${ch.amt}${q.plan.unit}`)," ",el("span",null,`(${ch.from}~${ch.to} · ${ch.idx+1}/${q.plan.sessions}회)`));main.appendChild(a);}
-  const m=tagsFor(q,opts); m.prepend(el("span","tag quest","↻ 오늘 퀘스트"));
+  const m=tagsFor(q,opts); m.prepend(el("span","tag quest",q.read?"독서 계획":"↻ 오늘 퀘스트"));
+  if(q.read&&readToday(q).overdue) m.prepend(el("span","tag late","기한 지남"));
   main.appendChild(m);
-  main.addEventListener("click",()=>openSheet({mode:"edit-quest",id:q.id}));
+  main.addEventListener("click",()=>openSheet({mode:q.read?"read-progress":"edit-quest",id:q.id}));
   c.append(catIco(q),main,checkBtn(on,true,q.title+" 오늘 완료",()=>{
+    if(q.read){const ri=readToday(q);setReadPage(q,on?ri.base:ri.target);save();render();return;}
     if(on) delete q.log[t]; else {q.log[t]=true; if(q.mission) xpToast(q.mission,15);}
     save(); render();
   }));
@@ -514,14 +557,19 @@ function questCard(q){
   const body=el("span","q-body");
   body.appendChild(el("span","row-text",q.title));
   const ds=ORDER.filter(d=>q.days.includes(d)).map(d=>DAYS[d]).join("·");
-  if(q.plan){
+  if(q.read){
+    const r=q.read,fm=x=>{const d=parse(x);return `${d.getMonth()+1}/${d.getDate()}`;};
+    const state=r.cur>=r.total?"완독":today()<r.start?`${fm(r.start)} 시작`:today()>r.end?"기한 지남":`다음: ${isTodayQuest(q)?"오늘":nextDay(q)}`;
+    body.appendChild(el("span","q-info",`${ds} · ${fm(r.start)}~${fm(r.end)} · ${r.cur}/${r.total}쪽 · ${state}`));
+    const bar=el("div","bar2"),sp=el("span");sp.style.width=(r.cur/r.total*100)+"%";bar.appendChild(sp);body.appendChild(bar);
+  } else if(q.plan){
     const n=Math.min(doneTotal(q),q.plan.sessions);
     body.appendChild(el("span","q-info",`${ds} · ${q.plan.total}${q.plan.unit}를 ${q.plan.sessions}회에 · `+(n>=q.plan.sessions?"모두 완료":`${n}/${q.plan.sessions}회`)));
     const bar=el("div","bar2"),s=el("span");s.style.width=(n/q.plan.sessions*100)+"%";bar.appendChild(s);body.appendChild(bar);
   } else body.appendChild(el("span","q-info",`${ds} 반복 · ${doneTotal(q)}회 완료`+(isTodayQuest(q)?" · 오늘":` · 다음: ${nextDay(q)}`)));
   body.appendChild(tagsFor(q));
   card.append(catIco(q),body);
-  card.addEventListener("click",()=>openSheet({mode:"edit-quest",id:q.id}));
+  card.addEventListener("click",()=>openSheet({mode:q.read?"read-progress":"edit-quest",id:q.id}));
   return card;
 }
 function sortTasks(arr){
@@ -935,6 +983,7 @@ function openSheet(o){
 
   if(o.mode==="wish"||o.mode==="edit-wish"){wishSheet(sh,o);return;}
   if(o.mode==="cats"){catsSheet(sh,o);return;}
+  if(o.mode==="read-progress"){readSheet(sh,o);return;}
 
   const editing=o.mode==="edit-task"||o.mode==="edit-quest";
   const isQuestEdit=o.mode==="edit-quest";
@@ -943,18 +992,20 @@ function openSheet(o){
     group:src?(src.group||"etc"):(o.group||"input"),
     sub:src?(src.sub||""):(o.sub||""),
     prio:src?(src.prio||2):2,
-    days:src&&src.days?src.days.slice():[],
+    days:src&&src.days&&!src.read?src.days.slice():[],
+    rdays:src&&src.read?src.days.slice():[],
     mods:new Set()
   };
+  const isReadEdit=isQuestEdit&&!!src.read;
   const linkedMission=src?src.mission:(o.mission||"");
   if(src){
     if(!isQuestEdit&&src.due) st.mods.add("due");
-    if(isQuestEdit){st.mods.add("repeat");if(src.plan)st.mods.add("plan");}
+    if(isQuestEdit){if(src.read)st.mods.add("read");else{st.mods.add("repeat");if(src.plan)st.mods.add("plan");}}
     if(src.mission) st.mods.add("mission");
   } else if(o.mission&&S.missions.some(m=>m.id===o.mission&&!m.done)) st.mods.add("mission");
-  const locked=new Set(isQuestEdit?["repeat","plan"]:[]);
+  const locked=new Set(isQuestEdit?["repeat","plan","read"]:[]);
 
-  const h=el("h3",null,editing?(isQuestEdit?"반복 퀘스트 수정":"할 일 수정"):"새로 추가");
+  const h=el("h3",null,editing?(isReadEdit?"독서 계획 수정":isQuestEdit?"반복 퀘스트 수정":"할 일 수정"):"새로 추가");
   const pill=el("span","kind-pill");h.appendChild(pill);sh.appendChild(h);
 
   const title=el("input");title.type="text";title.id="f-title";title.maxLength=200;title.placeholder="예: 『코스모스』 읽기";
@@ -1002,6 +1053,45 @@ function openSheet(o){
   else planWrap.append(r1,r2,pv);
   const planBody=[planWrap];
 
+  /* 독서 계획 */
+  const rDayBox=el("div","days");
+  ORDER.forEach(d=>{const b=el("button",null,DAYS[d]);b.type="button";b.setAttribute("aria-pressed",String(st.rdays.includes(d)));b.setAttribute("aria-label","읽는 요일 "+DAYS[d]+"요일");
+    b.addEventListener("click",()=>{if(st.rdays.includes(d))st.rdays=st.rdays.filter(x=>x!==d);else st.rdays.push(d);b.setAttribute("aria-pressed",String(st.rdays.includes(d)));rPreview();});rDayBox.appendChild(b);});
+  const rDayAll=el("div","quick");[["매일",[0,1,2,3,4,5,6]],["평일",[1,2,3,4,5]],["주말",[0,6]]].forEach(([l,ds])=>{const b=el("button",null,l);b.type="button";
+    b.addEventListener("click",()=>{st.rdays=ds.slice();rDayBox.querySelectorAll("button").forEach((x,i)=>x.setAttribute("aria-pressed",String(st.rdays.includes(ORDER[i]))));rPreview();});rDayAll.appendChild(b);});
+  const rStart=el("input");rStart.type="date";rStart.id="f-rstart";rStart.setAttribute("aria-label","시작일");rStart.value=src&&src.read?src.read.start:today();
+  const rEnd=el("input");rEnd.type="date";rEnd.id="f-rend";rEnd.setAttribute("aria-label","데드라인");
+  if(src&&src.read)rEnd.value=src.read.end;
+  const dates=el("div","dates");dates.append(rStart,el("span",null,"~"),rEnd);
+  const rQuick=el("div","quick");[["1주",7],["2주",14],["한 달",30],["두 달",60]].forEach(([l,n])=>{const b=el("button",null,l);b.type="button";
+    b.addEventListener("click",()=>{const d=parse(rStart.value||today());d.setDate(d.getDate()+n-1);rEnd.value=ymd(d);rPreview();});rQuick.appendChild(b);});
+  const rTotal=el("input");rTotal.type="number";rTotal.min="1";rTotal.inputMode="numeric";rTotal.id="f-rtotal";rTotal.placeholder="320";rTotal.setAttribute("aria-label","총 페이지 수");
+  if(src&&src.read)rTotal.value=src.read.total;
+  const rCur=el("input");rCur.type="number";rCur.min="0";rCur.inputMode="numeric";rCur.id="f-rcur";rCur.setAttribute("aria-label","지금 읽은 페이지");rCur.value=src&&src.read?src.read.cur:"0";
+  const rr1=el("div","r");rr1.append(el("span",null,"총"),rTotal,el("span",null,"쪽"));
+  const rr2=el("div","r");rr2.append(el("span",null,"지금"),rCur,el("span",null,"쪽까지 읽음"));
+  const rPv=el("div","preview");
+  [rStart,rEnd,rTotal,rCur].forEach(x=>x.addEventListener("input",rPreview));
+  const readBody=[el("span","lbl","읽을 요일"),rDayBox,rDayAll,el("span","lbl","기간 (시작 ~ 데드라인)"),dates,rQuick,el("span","lbl","페이지"),el("div","plan"),rPv];
+  readBody[7].style.padding="0";readBody[7].style.background="none";readBody[7].append(rr1,rr2);
+  function rCalc(){
+    const T=parseInt(rTotal.value,10),C=parseInt(rCur.value||"0",10)||0,a=rStart.value,b=rEnd.value;
+    if(!st.rdays.length) return {err:"읽을 요일을 골라 주세요."};
+    if(!a||!b) return {err:"시작일과 데드라인을 정해 주세요."};
+    if(b<a) return {err:"데드라인이 시작일보다 빨라요."};
+    if(!(T>0)) return {err:"총 페이지 수를 넣어 주세요."};
+    if(C>=T) return {err:"이미 다 읽은 책이에요. 지금 읽은 쪽수를 확인해 주세요."};
+    const fake={days:st.rdays,read:{start:a,end:b}};
+    const from=today()>a?today():a, n=readDaysFrom(fake,from);
+    if(!n) return {err:"남은 기간에 읽을 요일이 없어요. 데드라인이나 요일을 바꿔 주세요."};
+    return {T,C,a,b,n,per:Math.ceil((T-C)/n)};
+  }
+  function rPreview(){
+    if(!st.mods.has("read"))return;const c=rCalc();
+    if(c.err){rPv.textContent=c.err;rPv.classList.add("err");return;}
+    rPv.classList.remove("err");rPv.textContent=`읽는 날 ${c.n}일 · 하루 약 ${c.per}쪽 · 남은 ${c.T-c.C}쪽`;
+  }
+
   const mis=el("select");mis.id="f-mission";mis.setAttribute("aria-label","메인 미션");
   activeMissions().forEach(m=>{const op=el("option",null,"★ "+m.title);op.value=m.id;mis.appendChild(op);});
   if(linkedMission){const lm=S.missions.find(m=>m.id===linkedMission);if(lm&&lm.done){const op=el("option",null,"★ "+lm.title+" (달성)");op.value=lm.id;mis.appendChild(op);}}
@@ -1012,13 +1102,17 @@ function openSheet(o){
     due:{name:"희망 마감일",desc:"언제까지 끝낼지 정해요. 오늘 탭 기준이 돼요",body:dueBody},
     repeat:{name:"반복 요일",desc:"고른 요일마다 오늘 할 일에 나타나요",body:repeatBody},
     plan:{name:"분량 나누기",desc:"총 분량을 기간에 맞춰 한 번 분량으로 나눠요",body:planBody},
+    read:{name:"독서 계획 잡기",desc:"요일·기간·쪽수로 하루에 읽을 양을 계산해요",body:readBody},
     mission:{name:"메인 미션 연결",desc:"완료할 때마다 미션 경험치가 쌓여요",body:missionBody}
   };
-  const MORDER=["due","repeat","plan","mission"];
+  const MORDER=["due","repeat","plan","read","mission"];
   function availability(k){ // false = hide, string = disabled reason, null = ok
     if(st.mods.has(k)) return false;
     if(o.mode==="edit-task"&&(k==="repeat"||k==="plan")) return false;
     if(isQuestEdit&&k!=="mission") return false;
+    if(o.mode==="edit-task"&&k==="read") return false;
+    if(k==="read"&&(st.mods.has("due")||st.mods.has("repeat")||st.mods.has("plan"))) return "마감일·반복 요일과 함께 쓸 수 없어요";
+    if((k==="due"||k==="repeat"||k==="plan")&&st.mods.has("read")) return "독서 계획에 요일과 기간이 들어 있어요";
     if(k==="due"&&st.mods.has("repeat")) return "반복 요일과 함께 쓸 수 없어요";
     if((k==="repeat"||k==="plan")&&st.mods.has("due")) return "희망 마감일과 함께 쓸 수 없어요";
     if(k==="mission"&&!mis.options.length) return "메인 미션을 먼저 만들어 주세요";
@@ -1056,6 +1150,10 @@ function openSheet(o){
       p.disabled=!!a;
       p.addEventListener("click",()=>{
         st.mods.add(k);if(k==="plan")st.mods.add("repeat");
+        if(k==="read"){
+          if(!st.sub){const ib=sh.querySelector('.seg.group button[data-v="input"]');if(ib&&st.group!=="input")ib.click();if(S.subs.input.includes("독서")){st.sub="독서";fillSubs();}}
+          title.placeholder="책 제목 (예: 코스모스)";setTimeout(rPreview,0);
+        }
         picker.hidden=true;renderMods();
         const first=modsBox.querySelector(`.mod:nth-child(${MORDER.filter(x=>st.mods.has(x)).indexOf(k)+1}) input, .mod:nth-child(${MORDER.filter(x=>st.mods.has(x)).indexOf(k)+1}) select, .mod:nth-child(${MORDER.filter(x=>st.mods.has(x)).indexOf(k)+1}) button:not(.mod-x)`);
         if(first&&k!=="due")first.focus();
@@ -1078,10 +1176,11 @@ function openSheet(o){
     pv.classList.remove("err");const e=new Date();e.setDate(e.getDate()+c.span-1);
     pv.textContent=`총 ${c.sessions}회 · 한 번에 ${c.per}${c.unit}씩 (${e.getMonth()+1}/${e.getDate()}까지)`;
   }
-  const isQuest=()=>st.mods.has("repeat");
+  const isQuest=()=>st.mods.has("repeat")||st.mods.has("read");
   function sync(){
-    pill.textContent=isQuest()?"반복 퀘스트":"할 일";
-    save1.textContent=editing?"저장":(isQuest()?"반복 퀘스트 추가":"할 일 추가");
+    pill.textContent=st.mods.has("read")?"독서 계획":isQuest()?"반복 퀘스트":"할 일";
+    save1.textContent=editing?"저장":(st.mods.has("read")?"독서 계획 추가":isQuest()?"반복 퀘스트 추가":"할 일 추가");
+    rPreview();
   }
 
   const br=el("div","btnrow");const save1=el("button","btn");save1.type="submit";br.appendChild(save1);
@@ -1102,12 +1201,21 @@ function openSheet(o){
     const mission=st.mods.has("mission")?mis.value:"";
     const dueVal=st.mods.has("due")?(due.value||""):"";
     const newLink=mission&&mission!==(src?src.mission:"");
+    let readData=null;
+    if(st.mods.has("read")){
+      const c=rCalc();if(c.err){rPv.textContent=c.err;rPv.classList.add("err");rPv.scrollIntoView({block:"center"});return;}
+      readData=c;
+    }
     if(editing){
+      if(isReadEdit&&readData){src.days=st.rdays.slice();Object.assign(src.read,{total:readData.T,cur:readData.C,start:readData.a,end:readData.b});}
       if(isQuestEdit)src.title=t;else{src.text=t;src.due=dueVal;}
       Object.assign(src,{group:st.group,sub:st.sub,mission,prio:st.prio});
       save();closeSheet();render();toast(newLink?"저장했어요. 미션 경험치 +10":"저장했어요.");return;
     }
-    if(!isQuest()){
+    if(readData){
+      S.quests.push({id:uid(),title:t,group:st.group,sub:st.sub,mission,prio:st.prio,days:st.rdays.slice(),plan:null,
+        read:{total:readData.T,cur:readData.C,start:readData.a,end:readData.b,hist:{}},log:{},created:Date.now()});
+    } else if(!isQuest()){
       S.items.push({id:uid(),text:t,done:false,doneAt:"",group:st.group,sub:st.sub,mission,prio:st.prio,due:dueVal,created:Date.now()});
     } else {
       if(!st.days.length){dErr.hidden=false;dayBox.querySelector("button").focus();return;}
@@ -1119,6 +1227,30 @@ function openSheet(o){
     if(o.fromWish)toast("위시를 할 일로 옮겼어요.");else if(mission)xpToast(mission,10);else toast("추가했어요.");
   });
   if(!editing) setTimeout(()=>title.focus(),50);
+}
+
+function readSheet(sh,o){
+  const q=S.quests.find(x=>x.id===o.id);if(!q){closeSheet();return;}
+  const r=q.read,ri=readToday(q);
+  sh.appendChild(el("h3",null,q.title));
+  const stat=el("div","read-stat");
+  [[`${r.cur}/${r.total}`,"읽은 쪽"],[String(r.total-r.cur),"남은 쪽"],[ri.overdue?"지남":String(ri.left),"남은 읽는 날"]].forEach(([b,l])=>{const d=el("div");d.append(el("b",null,b),el("span",null,l));stat.appendChild(d);});
+  sh.appendChild(stat);
+  const wrap=el("div","hue"+metaOf(q.group,q.sub).c);const bar=el("div","read-bar");bar.style.maxWidth="none";bar.style.height="8px";const sp=el("span");sp.style.width=(r.cur/r.total*100)+"%";bar.appendChild(sp);wrap.appendChild(bar);sh.appendChild(wrap);
+  if(r.cur<r.total) sh.appendChild(el("span","hint",ri.overdue?"데드라인이 지났어요. 남은 쪽을 오늘 목표로 잡았어요. 계획 수정에서 데드라인을 늘릴 수 있어요.":`오늘 목표는 ${ri.target}쪽까지예요. 더 읽거나 덜 읽어도 남은 날에 맞춰 하루 분량이 다시 계산돼요.`));
+  const pin=el("div","page-in");const inp=el("input");inp.type="number";inp.min="0";inp.max=String(r.total);inp.inputMode="numeric";inp.id="r-page";
+  inp.value=String(ri.logged?r.cur:ri.target);inp.setAttribute("aria-label","지금까지 읽은 쪽");
+  pin.append(inp,el("span",null,`/ ${r.total}쪽`));
+  sh.appendChild(field("지금 몇 쪽까지 읽었나요?",pin));
+  const qk=el("div","quick");[["오늘 목표",ri.target],["+10쪽",null],["다 읽음",r.total]].forEach(([l,v])=>{const b=el("button",null,l);b.type="button";
+    b.addEventListener("click",()=>{inp.value=String(v==null?Math.min(r.total,(parseInt(inp.value,10)||0)+10):v);});qk.appendChild(b);});
+  sh.appendChild(qk);
+  const br=el("div","btnrow");const sv=el("button","btn","기록하기");sv.type="submit";
+  const ed=el("button","btn soft","계획 수정");ed.type="button";ed.addEventListener("click",()=>openSheet({mode:"edit-quest",id:q.id}));
+  br.append(sv,ed);sh.appendChild(br);
+  sh.addEventListener("submit",e=>{e.preventDefault();const v=parseInt(inp.value,10);if(isNaN(v)){inp.focus();return;}
+    setReadPage(q,v);save();closeSheet();render();if(r.cur<r.total)toast(`${r.cur}쪽까지 기록했어요.`);});
+  setTimeout(()=>inp.select(),50);
 }
 
 function wishSheet(sh,o){
