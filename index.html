@@ -293,7 +293,7 @@ details.done-box .rows{margin-top:8px}
 (function(){
 "use strict";
 /* ================= data ================= */
-const APP_VERSION="v11";
+const APP_VERSION="v12";
 const LS="checklist-v4", OLD=["todo-items-v3","todo-items-v1"];
 const DAYS=["일","월","화","수","목","금","토"], ORDER=[1,2,3,4,5,6,0];
 const GROUPS={input:"인풋",output:"아웃풋",etc:"기타"};
@@ -314,11 +314,25 @@ const today=()=>ymd(new Date());
 const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,6);
 const clone=o=>JSON.parse(JSON.stringify(o));
 
+let loadFailed=false;
 function load(){
   let raw=null;
   try{raw=localStorage.getItem(LS);if(!raw)for(const k of OLD){raw=localStorage.getItem(k);if(raw)break;}}catch(e){}
-  if(raw){try{merge(JSON.parse(raw));}catch(e){}}
+  if(raw){try{merge(JSON.parse(raw));}catch(e){
+    // 읽다가 문제가 생기면 원본을 따로 보관하고, 덮어쓰지 않아요
+    loadFailed=true;try{localStorage.setItem("checklist-broken-"+Date.now(),raw);}catch(_){}
+  }}
 }
+/* 자동 백업: 하루 한 번 이 기기 안에 사본을 남겨요 (최근 7일치) */
+const SNAP="checklist-snapshots";
+const countData=d=>d?((d.items||[]).length+(d.quests||[]).length+(d.wishes||[]).length+(d.missions||[]).length):0;
+function snapshots(){try{return JSON.parse(localStorage.getItem(SNAP)||"[]");}catch(e){return [];}}
+function takeSnapshot(){
+  if(!countData(S))return;
+  try{let list=snapshots();const cur=list.find(x=>x.day===today());if(cur&&countData(cur.data)>countData(S))return;list=list.filter(x=>x.day!==today());list.unshift({day:today(),at:Date.now(),data:{v:4,...S}});list=list.slice(0,7);localStorage.setItem(SNAP,JSON.stringify(list));}catch(e){}
+}
+let persisted=null;
+if(navigator.storage&&navigator.storage.persist){navigator.storage.persisted().then(p=>p||navigator.storage.persist()).then(p=>{persisted=p;}).catch(()=>{});}
 function merge(d){
   if(!d) return;
   if(Array.isArray(d.items)) S.items=d.items.map(i=>{
@@ -342,8 +356,11 @@ function merge(d){
   }
   if(d.subs&&d.subs.input&&d.subs.output){const def=S.subs.etc;S.subs=clone(d.subs);if(!S.subs.etc)S.subs.etc=def;}
 }
+let snapTaken=false;
 function save(){
+  if(loadFailed){toast("저장된 데이터를 읽지 못해 보호 중이에요. 설정에서 복원해 주세요.");return;}
   try{localStorage.setItem(LS,JSON.stringify({v:4,...S}));}catch(e){toast("저장 공간에 저장하지 못했어요.");}
+  if(!snapTaken){snapTaken=true;takeSnapshot();}
 }
 
 /* ================= quest math ================= */
@@ -898,10 +915,27 @@ function screenSettings(v){
   ub.addEventListener("click",async()=>{ub.textContent="확인 중…";
     try{if(swReg)await swReg.update();const ks=await caches.keys();await Promise.all(ks.map(k=>caches.delete(k)));}catch(e){}
     location.reload();});
-  vr.appendChild(ub);vp.appendChild(vr);v.appendChild(vp);
+  vr.appendChild(ub);vp.appendChild(vr);
+  const mode=matchMedia("(display-mode: standalone)").matches?"설치된 앱":"브라우저";
+  const ua=navigator.userAgent, brName=/SamsungBrowser/.test(ua)?"삼성 인터넷":/EdgA?\//.test(ua)?"엣지":/Chrome\//.test(ua)?"크롬":"브라우저";
+  vp.appendChild(el("span","hint",`이 기기에 저장된 항목 ${countData(S)}개 · ${brName} ${mode} · 데이터 보호 ${persisted?"켜짐":"요청함"}`));
+  vp.appendChild(el("span","hint","데이터는 앱을 연 브라우저마다 따로 저장돼요. 크롬에서 쓰던 내용은 삼성 인터넷에서 보이지 않아요."));
+  v.appendChild(vp);
+
+  const sp=el("div","panel");sp.appendChild(el("h3",null,"자동 백업"));
+  const snaps=snapshots();
+  sp.appendChild(el("span","hint",snaps.length?"하루에 한 번 이 기기 안에 사본을 남겨요. 실수로 지웠을 때 그날 상태로 되돌릴 수 있어요.":"아직 자동 백업이 없어요. 앱을 쓰면 하루에 한 번 만들어져요."));
+  snaps.forEach(sn=>{
+    const r=el("div","cat-set-head");const d=new Date(sn.at);
+    r.append(el("span",null,`${d.getMonth()+1}/${d.getDate()} ${String(d.getHours()).padStart(2,"0")}:${String(d.getMinutes()).padStart(2,"0")} · 항목 ${countData(sn.data)}개`));
+    const rb=el("button","ghost-btn","이 시점으로 복원");rb.type="button";
+    armButton(rb,"한 번 더 누르면 복원",()=>{loadFailed=false;S={catMeta:{},items:[],quests:[],missions:[],wishes:[],wishKinds:S.wishKinds,subs:S.subs};merge(sn.data);snapTaken=true;save();render();toast("복원했어요.");});
+    r.appendChild(rb);sp.appendChild(r);
+  });
+  v.appendChild(sp);
 
   const b=el("div","panel");b.appendChild(el("h3",null,"백업 · 복원"));
-  b.appendChild(el("span","hint","데이터는 이 폰에만 저장돼요. 가끔 백업 파일을 저장해 두면 폰을 바꿔도 그대로 옮길 수 있어요."));
+  b.appendChild(el("span","hint","자동 백업은 이 기기 안에만 남아서, 브라우저 데이터를 지우면 함께 사라져요. 가끔 백업 파일을 저장해 두면 어떤 경우에도 되살릴 수 있어요."));
   const br=el("div","btnrow");
   const ex=el("button","btn","백업 파일 저장");ex.type="button";
   ex.addEventListener("click",()=>{
@@ -921,7 +955,7 @@ function screenSettings(v){
 }
 function restore(text){
   try{const d=JSON.parse(text);if(!d||(!Array.isArray(d.items)&&!Array.isArray(d.quests)&&!Array.isArray(d.wishes)))throw 0;
-    S={catMeta:{},items:[],quests:[],missions:[],wishes:[],wishKinds:S.wishKinds,subs:S.subs};merge(d);save();render();toast("복원했어요.");}
+    loadFailed=false;S={catMeta:{},items:[],quests:[],missions:[],wishes:[],wishKinds:S.wishKinds,subs:S.subs};merge(d);save();render();toast("복원했어요.");}
   catch(e){toast("백업 내용을 읽지 못했어요. 파일을 확인해 주세요.");}
 }
 
@@ -1299,7 +1333,7 @@ function wishSheet(sh,o){
 document.addEventListener("keydown",e=>{if(e.key==="Escape")closeSheet();});
 
 /* ================= boot ================= */
-load(); render();
+load(); render(); if(!loadFailed){takeSnapshot();snapTaken=true;}
 let lastDay=today();
 setInterval(()=>{if(today()!==lastDay){lastDay=today();render();}},60000);
 document.addEventListener("visibilitychange",()=>{if(!document.hidden&&today()!==lastDay){lastDay=today();render();}});
