@@ -1,5 +1,5 @@
 // 새 버전을 올릴 때마다 VERSION 숫자를 올리면 앱이 다음 실행 때 업데이트돼요.
-const VERSION = "v13";
+const VERSION = "v14";
 const FILES = ["./", "./index.html", "./manifest.webmanifest", "./icon-192.png", "./icon-512.png", "./vendor/firebase-app-compat.js", "./vendor/firebase-auth-compat.js", "./vendor/firebase-firestore-compat.js"];
 self.addEventListener("install", e => {
   e.waitUntil(caches.open(VERSION).then(c => c.addAll(FILES.map(f => new Request(f, { cache: "reload" })))).then(() => self.skipWaiting()));
