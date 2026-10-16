@@ -18,10 +18,10 @@
   --h0:#b4473a; --h0s:#f7e3df; --h1:#b0601a; --h1s:#f8e7d6; --h2:#8a6d00; --h2s:#f5edcc; --h3:#3f7d3a; --h3s:#e1f0dd; --h4:#22776f; --h4s:#d9efec;
   --h5:#3c5f9e; --h5s:#e0e9f7; --h6:#5a4fb0; --h6s:#e7e4f8; --h7:#8a46a8; --h7s:#f0e2f6; --h8:#b03f78; --h8s:#f8e0ec; --h9:#7a5a3a; --h9s:#efe6dc; --h10:#5d6670; --h10s:#e6e9ec;
   --wood:#c9a477; --wood-dark:#9c7748; --cabinet:#f6efe4; --bronze:#b0743c; --silver:#98a2ad; --goldcup:#d4a017;
-  --hero:#dbe8e0; --hero-fg:#1d2a24; --hero-chip:rgba(255,255,255,.65); --hero-track:rgba(29,42,36,.12);
+  --go-bg:#2f6b4f; --go-fg:#f2f4f1; --go-ic:rgba(255,255,255,.18); --hero:#dbe8e0; --hero-fg:#1d2a24; --hero-chip:rgba(255,255,255,.65); --hero-track:rgba(29,42,36,.12);
   --display:"Gowun Batang",Georgia,serif; --body:"IBM Plex Sans KR",-apple-system,"Apple SD Gothic Neo","Noto Sans KR",sans-serif;
 }
-@media (prefers-color-scheme:dark){:root{--bg:#141a17;--card:#1c2420;--fg:#e4ebe6;--muted:#93a29a;--line:#2c3732;--accent:#7cc39e;--accent-soft:#233229;--warn:#ef9a74;--warn-soft:#3a2720;--gold:#e9c46a;--gold-soft:#3a3320;--in:#8fb0ec;--in-soft:#1f2a3c;--out:#eba680;--out-soft:#3a2a21;--etc:#b4bcc5;--etc-soft:#262d33;--h0:#f0998b;--h0s:#3d2421;--h1:#efaa6c;--h1s:#3b2a1b;--h2:#e3c45a;--h2s:#35301a;--h3:#8fcf86;--h3s:#1f3320;--h4:#6fd0c4;--h4s:#17332f;--h5:#8fb0ec;--h5s:#1f2a3c;--h6:#aaa2f0;--h6s:#272440;--h7:#d39cec;--h7s:#33213b;--h8:#f095c2;--h8s:#3b2030;--h9:#d2b08a;--h9s:#33281d;--h10:#b4bcc5;--h10s:#262d33;--wish:#b9a1ec;--wish-soft:#2a2338;--wood:#7a5a3a;--wood-dark:#553e27;--cabinet:#211c17;--hero:#22302a;--hero-fg:#e4ebe6;--hero-chip:rgba(255,255,255,.07);--hero-track:rgba(255,255,255,.12);color-scheme:dark}}
+@media (prefers-color-scheme:dark){:root{--bg:#141a17;--card:#1c2420;--fg:#e4ebe6;--muted:#93a29a;--line:#2c3732;--accent:#7cc39e;--accent-soft:#233229;--warn:#ef9a74;--warn-soft:#3a2720;--gold:#e9c46a;--gold-soft:#3a3320;--in:#8fb0ec;--in-soft:#1f2a3c;--out:#eba680;--out-soft:#3a2a21;--etc:#b4bcc5;--etc-soft:#262d33;--h0:#f0998b;--h0s:#3d2421;--h1:#efaa6c;--h1s:#3b2a1b;--h2:#e3c45a;--h2s:#35301a;--h3:#8fcf86;--h3s:#1f3320;--h4:#6fd0c4;--h4s:#17332f;--h5:#8fb0ec;--h5s:#1f2a3c;--h6:#aaa2f0;--h6s:#272440;--h7:#d39cec;--h7s:#33213b;--h8:#f095c2;--h8s:#3b2030;--h9:#d2b08a;--h9s:#33281d;--h10:#b4bcc5;--h10s:#262d33;--wish:#b9a1ec;--wish-soft:#2a2338;--wood:#7a5a3a;--wood-dark:#553e27;--cabinet:#211c17;--go-bg:#24382e;--go-fg:#cfe6d9;--go-ic:rgba(124,195,158,.16);--hero:#22302a;--hero-fg:#e4ebe6;--hero-chip:rgba(255,255,255,.07);--hero-track:rgba(255,255,255,.12);color-scheme:dark}}
 *{box-sizing:border-box}
 html,body{margin:0}
 body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:16px;line-height:1.5;-webkit-tap-highlight-color:transparent}
@@ -280,9 +280,9 @@ details.done-box .rows{margin-top:8px}
 .sync-status div{display:flex;flex-direction:column;gap:2px}
 .plan-card{display:flex;flex-direction:column;gap:10px;background:var(--card);border:1px solid var(--line);border-radius:16px;padding:12px}
 .plan-card:has(.plan-go){padding:0;border:none;background:none}
-.plan-go{display:flex;align-items:center;gap:12px;width:100%;padding:14px 16px;border-radius:16px;background:var(--accent);color:var(--bg);text-align:left}
+.plan-go{display:flex;align-items:center;gap:12px;width:100%;padding:14px 16px;border-radius:16px;background:var(--go-bg);color:var(--go-fg);text-align:left;border:1px solid color-mix(in srgb,var(--go-fg) 12%,transparent)}
 .plan-go:disabled{background:var(--line);color:var(--muted);cursor:default}
-.pg-ic{width:40px;height:40px;border-radius:50%;background:rgba(255,255,255,.18);display:grid;place-content:center;flex:none}
+.pg-ic{width:40px;height:40px;border-radius:50%;background:var(--go-ic);display:grid;place-content:center;flex:none}
 .pg-ic svg{width:22px;height:22px}
 .pg-tx{display:flex;flex-direction:column;gap:2px;min-width:0}
 .pg-tx b{font-size:1rem}
@@ -347,7 +347,7 @@ details.done-box .rows{margin-top:8px}
 (function(){
 "use strict";
 /* ================= data ================= */
-const APP_VERSION="v14";
+const APP_VERSION="v15";
 const LS="checklist-v4", OLD=["todo-items-v3","todo-items-v1"];
 const DAYS=["일","월","화","수","목","금","토"], ORDER=[1,2,3,4,5,6,0];
 const GROUPS={input:"인풋",output:"아웃풋",etc:"기타"};
@@ -1008,7 +1008,8 @@ function screenHome(v){
   const tabs=seg("tabs",TABS,homeTab,k=>{homeTab=k;homeLimit=8;try{localStorage.setItem("checklist-hometab",k);}catch(e){}render();});
   v.appendChild(tabs);
 
-  if(homeTab==="today") v.appendChild(planCard());
+  const hasPlan=homeTab==="today"&&!!loadPlan();
+  if(hasPlan) v.appendChild(planCard());
   const area=el("div","rows");
   if(homeTab==="mission"){
     if(!S.missions.length){
@@ -1045,6 +1046,7 @@ function screenHome(v){
     const d=el("details","done-box");d.appendChild(el("summary",null,`오늘 끝낸 일 ${finished.length}개`));
     const r=el("div","rows");finished.forEach(o=>r.appendChild(o._quest?questRow(o._ref):taskRow(o)));d.appendChild(r);v.appendChild(d);
   }
+  if(homeTab==="today"&&!hasPlan) v.appendChild(planCard());
 
   // 좌우로 밀어서 탭 넘기기
   let sx=0,sy=0,tracking=false;
