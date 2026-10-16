@@ -264,6 +264,20 @@ details.done-box .rows{margin-top:8px}
 .page-in span{color:var(--muted)}
 .dates{display:grid;grid-template-columns:1fr auto 1fr;gap:6px;align-items:center}
 .dates span{color:var(--muted);font-size:.85rem}
+.sync-btn[data-state="synced"]{color:var(--accent)}
+.sync-btn[data-state="syncing"]{color:var(--accent);opacity:.6}
+.sync-btn[data-state="error"]{color:var(--warn)}
+.sync-banner{display:flex;align-items:center;gap:10px;padding:12px 8px 12px 14px;border-radius:14px;background:var(--accent-soft);flex-wrap:wrap}
+.sync-banner .sb-text{flex:1 1 180px;display:flex;flex-direction:column;gap:2px;min-width:0}
+.sync-banner b{font-size:.92rem}
+.sync-banner span{font-size:.8rem;color:var(--muted)}
+.sync-banner .btn{padding:8px 14px}
+.sync-status{display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:12px;background:var(--bg)}
+.sync-status .sync-ic{width:36px;height:36px;border-radius:50%;display:grid;place-content:center;background:var(--card);color:var(--muted);flex:none}
+.sync-status .sync-ic svg{width:20px;height:20px}
+.sync-status[data-state="synced"] .sync-ic{color:var(--accent);background:var(--accent-soft)}
+.sync-status[data-state="error"] .sync-ic{color:var(--warn);background:var(--warn-soft)}
+.sync-status div{display:flex;flex-direction:column;gap:2px}
 .toggle{display:flex;align-items:center;gap:8px;font-size:.92rem;cursor:pointer}
 .toggle input{width:18px;height:18px;accent-color:var(--accent)}
 .plan{display:flex;flex-direction:column;gap:8px;padding:10px;border-radius:10px;background:var(--bg)}
@@ -281,7 +295,7 @@ details.done-box .rows{margin-top:8px}
 <body>
 <header class="top">
   <button class="iconbtn" id="backBtn" aria-label="뒤로" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg></button>
-  <span class="iconbtn" id="backSpacer" aria-hidden="true"></span>
+  <button class="iconbtn sync-btn" id="syncBtn" aria-label="동기화" hidden></button><span class="iconbtn" id="backSpacer" aria-hidden="true"></span>
   <h1 id="screenTitle">체크리스트</h1>
   <button class="iconbtn" id="settingsBtn" aria-label="설정"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg></button>
 </header>
@@ -293,7 +307,7 @@ details.done-box .rows{margin-top:8px}
 (function(){
 "use strict";
 /* ================= data ================= */
-const APP_VERSION="v12";
+const APP_VERSION="v13";
 const LS="checklist-v4", OLD=["todo-items-v3","todo-items-v1"];
 const DAYS=["일","월","화","수","목","금","토"], ORDER=[1,2,3,4,5,6,0];
 const GROUPS={input:"인풋",output:"아웃풋",etc:"기타"};
@@ -355,13 +369,142 @@ function merge(d){
     } else S.wishKinds=k;
   }
   if(d.subs&&d.subs.input&&d.subs.output){const def=S.subs.etc;S.subs=clone(d.subs);if(!S.subs.etc)S.subs.etc=def;}
+  if(d.tomb&&typeof d.tomb==="object") S.tomb=clone(d.tomb);
+  if(d.setU) S.setU=d.setU;
 }
 let snapTaken=false;
 function save(){
   if(loadFailed){toast("저장된 데이터를 읽지 못해 보호 중이에요. 설정에서 복원해 주세요.");return;}
+  stampChanges();
   try{localStorage.setItem(LS,JSON.stringify({v:4,...S}));}catch(e){toast("저장 공간에 저장하지 못했어요.");}
   if(!snapTaken){snapTaken=true;takeSnapshot();}
+  Sync.queue();
 }
+
+/* ================= 변경 기록 (동기화용) =================
+   저장할 때마다 직전 상태와 비교해서, 바뀐 항목에는 수정 시각(u)을,
+   지운 항목에는 삭제 기록(tomb)을 남겨요. 기기끼리 합칠 때 더 최근 것을 고르는 기준이 돼요. */
+const COLLS=["items","quests","missions","wishes"];
+let lastSeen=null;
+const noU=o=>{const c={...o};delete c.u;return JSON.stringify(c);};
+function seenMap(){
+  const m={};COLLS.forEach(c=>(S[c]||[]).forEach(o=>{m[c+"/"+o.id]=noU(o);}));
+  m.__set=JSON.stringify([S.subs,S.wishKinds,S.catMeta]);return m;
+}
+function stampChanges(){
+  const now=Date.now();S.tomb=S.tomb||{};
+  if(lastSeen){
+    const cur={};
+    COLLS.forEach(c=>(S[c]||[]).forEach(o=>{const k=c+"/"+o.id;cur[k]=1;if(lastSeen[k]!==noU(o))o.u=now;}));
+    Object.keys(lastSeen).forEach(k=>{if(k!=="__set"&&!cur[k])S.tomb[k]=now;});
+    if(lastSeen.__set!==JSON.stringify([S.subs,S.wishKinds,S.catMeta]))S.setU=now;
+  }
+  const old=now-90*86400000;Object.keys(S.tomb).forEach(k=>{if(S.tomb[k]<old)delete S.tomb[k];});
+  lastSeen=seenMap();
+}
+const coreOf=x=>({items:x.items||[],quests:x.quests||[],missions:x.missions||[],wishes:x.wishes||[],subs:x.subs,wishKinds:x.wishKinds,catMeta:x.catMeta||{},tomb:x.tomb||{},setU:x.setU||0});
+function mergeStates(L,R){
+  const out=coreOf(L);const tomb={...(L.tomb||{})};
+  Object.entries(R.tomb||{}).forEach(([k,t])=>{tomb[k]=Math.max(tomb[k]||0,t);});
+  COLLS.forEach(c=>{
+    const m=new Map();(L[c]||[]).forEach(o=>m.set(o.id,o));
+    (R[c]||[]).forEach(o=>{const x=m.get(o.id);if(!x||(o.u||0)>(x.u||0))m.set(o.id,o);});
+    out[c]=[...m.values()].filter(o=>!(tomb[c+"/"+o.id]&&tomb[c+"/"+o.id]>=(o.u||0)));
+  });
+  if((R.setU||0)>(L.setU||0)&&R.subs){out.subs=R.subs;out.wishKinds=R.wishKinds;out.catMeta=R.catMeta||{};out.setU=R.setU;}
+  out.tomb=tomb;return out;
+}
+const sameCore=(a,b)=>JSON.stringify(coreOf(a))===JSON.stringify(coreOf(b));
+
+/* ================= 클라우드 동기화 (Firebase) ================= */
+const FIREBASE_CONFIG={
+  apiKey:"AIzaSyB8qGSfzBK5fVnBq_rHmzaNLCoxa07zGus",
+  authDomain:"todolist-a61b5.firebaseapp.com",
+  projectId:"todolist-a61b5",
+  storageBucket:"todolist-a61b5.firebasestorage.app",
+  messagingSenderId:"787365340089",
+  appId:"1:787365340089:web:6f4fdbd83c545649794c68"
+};
+const Sync={
+  state:"loading", // loading | out | syncing | synced | offline | error | unavailable
+  msg:"", user:null, lastAt:0, ready:false,
+  _auth:null,_db:null,_unsub:null,_timer:null,_dirty:false,
+  set(st,msg){this.state=st;this.msg=msg||"";paintSync();},
+  loadSdk(){
+    if(window.firebase&&window.firebase.firestore)return Promise.resolve();
+    const one=src=>new Promise((ok,no)=>{const sc=document.createElement("script");sc.src=src;sc.onload=ok;sc.onerror=()=>no(new Error("load"));document.head.appendChild(sc);});
+    return one("vendor/firebase-app-compat.js").then(()=>Promise.all([one("vendor/firebase-auth-compat.js"),one("vendor/firebase-firestore-compat.js")]));
+  },
+  init(){
+    this.loadSdk().then(()=>{
+      const fb=window.firebase;if(!fb.apps.length)fb.initializeApp(FIREBASE_CONFIG);
+      this._auth=fb.auth();this._db=fb.firestore();this.ready=true;
+      this._auth.getRedirectResult().catch(e=>this.fail(e));
+      this._auth.onAuthStateChanged(u=>{
+        this.user=u;if(this._unsub){this._unsub();this._unsub=null;}
+        if(!u){this.set("out");return;}
+        this.set("syncing");this.listen();
+      });
+    }).catch(()=>this.set("unavailable","인터넷에 연결되면 동기화를 쓸 수 있어요."));
+  },
+  ref(){return this._db.doc("users/"+this.user.uid+"/state/main");},
+  listen(){
+    this._unsub=this.ref().onSnapshot({includeMetadataChanges:false},snap=>{
+      if(snap.metadata.hasPendingWrites)return;
+      if(!snap.exists){this.push(true);return;}
+      let remote=null;try{remote=JSON.parse(snap.data().json||"{}");}catch(e){this.set("error","클라우드 데이터를 읽지 못했어요.");return;}
+      const merged=mergeStates(S,remote);
+      if(!sameCore(merged,S)){
+        Object.assign(S,merged);lastSeen=seenMap();
+        try{localStorage.setItem(LS,JSON.stringify({v:4,...S}));}catch(e){}
+        render();
+      }
+      if(!sameCore(merged,remote))this.push(true);
+      else{this.lastAt=Date.now();this.set("synced");}
+    },e=>this.fail(e));
+  },
+  queue(){if(!this.user||!this.ready)return;this._dirty=true;clearTimeout(this._timer);this.set("syncing");this._timer=setTimeout(()=>this.push(),1200);},
+  push(){
+    if(!this.user)return;clearTimeout(this._timer);this._dirty=false;
+    const json=JSON.stringify(coreOf(S));
+    if(json.length>900000){this.set("error","데이터가 너무 커서 올리지 못했어요. 완료한 항목을 정리해 주세요.");return;}
+    this.set("syncing");
+    this.ref().set({json,at:Date.now(),v:APP_VERSION}).then(()=>{this.lastAt=Date.now();if(!this._dirty)this.set("synced");}).catch(e=>this.fail(e));
+  },
+  signIn(){
+    if(!this.ready){toast("동기화 기능을 불러오는 중이에요. 잠시 후 다시 눌러 주세요.");return;}
+    const p=new window.firebase.auth.GoogleAuthProvider();p.setCustomParameters({prompt:"select_account"});
+    this._auth.signInWithPopup(p).then(()=>toast("로그인했어요. 데이터를 합치는 중이에요.")).catch(e=>{
+      if(e&&(e.code==="auth/popup-blocked"||e.code==="auth/operation-not-supported-in-this-environment"))return this._auth.signInWithRedirect(p).catch(x=>this.fail(x));
+      if(e&&(e.code==="auth/popup-closed-by-user"||e.code==="auth/cancelled-popup-request"))return;
+      this.fail(e);
+    });
+  },
+  signOut(){if(this._auth)this._auth.signOut().then(()=>toast("로그아웃했어요. 이 기기의 데이터는 그대로 남아 있어요."));},
+  fail(e){
+    const c=(e&&e.code)||"";let m="동기화 중 문제가 생겼어요. 잠시 후 다시 시도해 주세요.";
+    if(c.includes("unauthorized-domain"))m="Firebase 인증 설정의 승인된 도메인에 choo1014.github.io를 추가해 주세요.";
+    else if(c.includes("permission-denied"))m="Firestore 보안 규칙이 막고 있어요. 규칙 탭의 내용을 확인해 주세요.";
+    else if(c.includes("not-found")||c.includes("failed-precondition"))m="Firestore 데이터베이스가 아직 없어요. Firebase에서 데이터베이스를 만들어 주세요.";
+    else if(c.includes("unavailable")||c.includes("network"))m="인터넷 연결이 없어 잠시 멈췄어요. 연결되면 다시 맞춰져요.";
+    else if(c.includes("operation-not-allowed"))m="Firebase 인증에서 Google 로그인을 사용 설정해 주세요.";
+    this.set(c.includes("unavailable")||c.includes("network")?"offline":"error",m);
+    if(window.console)console.warn("sync",c,e&&e.message);
+  }
+};
+window.addEventListener("online",()=>{if(Sync.user)Sync.push();});
+function syncLabel(){
+  return {loading:"동기화 준비 중",out:"로그인 안 함",syncing:"동기화 중…",synced:"동기화됨",offline:"오프라인",error:"동기화 오류",unavailable:"동기화 사용 불가"}[Sync.state]||"";
+}
+const ICON_CLOUD='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"/></svg>';
+const ICON_CLOUD_OFF='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m2 2 20 20"/><path d="M5.782 5.782A7 7 0 0 0 9 19h8.5a4.5 4.5 0 0 0 1.307-.193"/><path d="M21.532 16.5A4.5 4.5 0 0 0 17.5 10h-1.79A7.008 7.008 0 0 0 10 5.07"/></svg>';
+function paintSync(){
+  const b=document.getElementById("syncBtn");
+  if(b){const on=Sync.state==="synced"||Sync.state==="syncing";b.innerHTML=on?ICON_CLOUD:ICON_CLOUD_OFF;b.dataset.state=Sync.state;b.setAttribute("aria-label","동기화: "+syncLabel());b.title=syncLabel();}
+  const p=document.getElementById("syncPanelStatus");if(p)renderSyncPanel(p.closest(".panel"));
+  const banner=document.getElementById("syncBanner");if(banner)banner.hidden=!(Sync.state==="out"&&!bannerDismissed());
+}
+function bannerDismissed(){try{return localStorage.getItem("checklist-syncbanner")==="x";}catch(e){return false;}}
 
 /* ================= quest math ================= */
 function countSessions(days,start,span){let n=0;const d=parse(start);for(let i=0;i<span;i++){if(days.includes(d.getDay()))n++;d.setDate(d.getDate()+1);}return n;}
@@ -627,6 +770,12 @@ function screenHome(v){
   mb.append(st,body,el("span","chev","›"));
   mb.addEventListener("click",()=>go("missions"));
   v.appendChild(mb);
+
+  const ban=el("div","sync-banner");ban.id="syncBanner";ban.hidden=!(Sync.state==="out"&&!bannerDismissed());
+  const bt=el("div","sb-text");bt.append(el("b",null,"구글로 로그인하고 안전하게 보관하세요"),el("span",null,"사용 기록을 지우거나 폰을 바꿔도 그대로 돌아오고, PC에서도 같은 목록을 볼 수 있어요."));
+  const bl=el("button","btn","로그인");bl.type="button";bl.addEventListener("click",()=>Sync.signIn());
+  const bx=el("button","mod-x","×");bx.type="button";bx.setAttribute("aria-label","안내 닫기");bx.addEventListener("click",()=>{try{localStorage.setItem("checklist-syncbanner","x");}catch(e){}ban.hidden=true;});
+  ban.append(bt,bl,bx);v.appendChild(ban);
 
   const tiles=el("div","tiles");
   GKEYS.forEach((g,i)=>{
@@ -909,6 +1058,8 @@ function screenSettings(v){
   });
   v.appendChild(p);
 
+  const syp=el("div","panel");renderSyncPanel(syp);v.appendChild(syp);
+
   const vp=el("div","panel");vp.appendChild(el("h3",null,"앱 정보"));
   const vr=el("div","cat-set-head");vr.append(el("span","hint","버전 "+APP_VERSION+" · 새 기능이 안 보이면 눌러 주세요"));
   const ub=el("button","ghost-btn","업데이트 확인");ub.type="button";
@@ -919,7 +1070,7 @@ function screenSettings(v){
   const mode=matchMedia("(display-mode: standalone)").matches?"설치된 앱":"브라우저";
   const ua=navigator.userAgent, brName=/SamsungBrowser/.test(ua)?"삼성 인터넷":/EdgA?\//.test(ua)?"엣지":/Chrome\//.test(ua)?"크롬":"브라우저";
   vp.appendChild(el("span","hint",`이 기기에 저장된 항목 ${countData(S)}개 · ${brName} ${mode} · 데이터 보호 ${persisted?"켜짐":"요청함"}`));
-  vp.appendChild(el("span","hint","데이터는 앱을 연 브라우저마다 따로 저장돼요. 크롬에서 쓰던 내용은 삼성 인터넷에서 보이지 않아요."));
+  vp.appendChild(el("span","hint","로그인하지 않으면 데이터는 앱을 연 브라우저 안에만 저장돼요. 크롬에서 쓰던 내용은 삼성 인터넷에서 보이지 않아요."));
   v.appendChild(vp);
 
   const sp=el("div","panel");sp.appendChild(el("h3",null,"자동 백업"));
@@ -959,6 +1110,26 @@ function restore(text){
   catch(e){toast("백업 내용을 읽지 못했어요. 파일을 확인해 주세요.");}
 }
 
+function renderSyncPanel(p){
+  p.innerHTML="";p.appendChild(el("h3",null,"클라우드 동기화"));
+  const st=el("div","sync-status");st.id="syncPanelStatus";st.dataset.state=Sync.state;
+  const ic=el("span","sync-ic");ic.innerHTML=(Sync.state==="synced"||Sync.state==="syncing")?ICON_CLOUD:ICON_CLOUD_OFF;
+  const tx=el("div");tx.style.minWidth="0";
+  tx.appendChild(el("b",null,syncLabel()));
+  if(Sync.user)tx.appendChild(el("span","hint",Sync.user.email+(Sync.lastAt?` · 마지막 동기화 ${new Date(Sync.lastAt).toLocaleTimeString("ko-KR",{hour:"2-digit",minute:"2-digit"})}`:"")));
+  if(Sync.msg)tx.appendChild(el("span","hint",Sync.msg));
+  st.append(ic,tx);p.appendChild(st);
+  if(Sync.state==="out"||Sync.state==="loading"){
+    p.appendChild(el("span","hint","구글 계정으로 로그인하면 이 기기의 할 일이 클라우드에 함께 저장돼요. 다른 기기에서 같은 계정으로 로그인하면 자동으로 합쳐지고, 한쪽에서 바꾸면 다른 쪽에도 바로 반영돼요."));
+    const b=el("button","btn","구글로 로그인");b.type="button";b.disabled=Sync.state==="loading";b.addEventListener("click",()=>Sync.signIn());p.appendChild(b);
+  } else if(Sync.user){
+    const br=el("div","btnrow");
+    const now=el("button","btn soft","지금 동기화");now.type="button";now.addEventListener("click",()=>Sync.push());
+    const out=el("button","btn soft","로그아웃");out.type="button";armButton(out,"한 번 더 누르면 로그아웃",()=>Sync.signOut());
+    br.append(now,out);p.appendChild(br);
+  }
+}
+
 /* ================= router ================= */
 function route(){const h=location.hash.replace(/^#\/?/,"");return h||"home";}
 function go(r,replace){if(replace){history.replaceState(null,"","#/"+r);lastRoute=r;render();}else location.hash="#/"+r;}
@@ -967,7 +1138,7 @@ function render(){
   const r=route(), v=$("view"); const y=window.scrollY;
   v.innerHTML="";
   const home=r==="home";
-  $("backBtn").hidden=home; $("backSpacer").hidden=!home;
+  $("backBtn").hidden=home; $("backSpacer").hidden=true; $("syncBtn").hidden=!home;
   $("fab").hidden=r==="settings";
   if(home){setTitle("");screenHome(v);}
   else if(r==="missions"){setTitle("메인 미션");screenMissions(v);}
@@ -982,6 +1153,7 @@ let lastRoute=route();
 window.addEventListener("hashchange",()=>{closeSheet();const r=route();if(r!==lastRoute){lastRoute=r;if(r==="home")homeLimit=8;render();window.scrollTo(0,0);}});
 $("backBtn").addEventListener("click",()=>{if(history.length>1)history.back();else go("home");});
 $("settingsBtn").addEventListener("click",()=>go("settings"));
+$("syncBtn").addEventListener("click",()=>go("settings"));
 $("fab").addEventListener("click",()=>{
   const r=route();
   if(r==="wish"){openSheet({mode:"wish",kind:wishFilter});return;}
@@ -1333,7 +1505,8 @@ function wishSheet(sh,o){
 document.addEventListener("keydown",e=>{if(e.key==="Escape")closeSheet();});
 
 /* ================= boot ================= */
-load(); render(); if(!loadFailed){takeSnapshot();snapTaken=true;}
+load(); lastSeen=seenMap(); render(); if(!loadFailed){takeSnapshot();snapTaken=true;}
+setTimeout(()=>{if(!loadFailed)Sync.init();else Sync.set("error","저장된 데이터를 먼저 복원해 주세요.");},300);
 let lastDay=today();
 setInterval(()=>{if(today()!==lastDay){lastDay=today();render();}},60000);
 document.addEventListener("visibilitychange",()=>{if(!document.hidden&&today()!==lastDay){lastDay=today();render();}});
