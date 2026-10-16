@@ -318,28 +318,6 @@ details.done-box .rows{margin-top:8px}
 .rt-meal .rt-name{padding:6px 8px;font-size:.88rem}
 .rt-meal input[type=time]{font-size:.85rem;padding:6px 4px;width:100%;min-width:0}
 .rt-meal .mod-x{width:26px}
-.rec-entry{display:flex;align-items:center;gap:12px;width:100%;padding:12px 14px;border-radius:14px;background:var(--card);border:1px solid var(--line);text-align:left}
-.rec-entry .re-ic{width:38px;height:38px;border-radius:50%;background:var(--gold-soft);color:var(--gold);display:grid;place-content:center;flex:none}
-.rec-entry .re-ic svg{width:20px;height:20px}
-.rec-entry .re-tx{flex:1;display:flex;flex-direction:column;gap:2px;min-width:0}
-.rec-entry .re-tx span{font-size:.8rem;color:var(--muted)}
-.seg.rec{flex-wrap:wrap}
-.seg.rec button{flex:1 1 30%}
-.taste-box summary{cursor:pointer;color:var(--muted);font-size:.9rem;padding:4px 0}
-.taste-box textarea{margin-top:8px}
-.rec-go{width:100%;padding:13px}
-.rec-card{display:flex;gap:12px;align-items:flex-start;padding:12px;background:var(--card);border:1px solid var(--line);border-radius:14px}
-.rec-body{flex:1;min-width:0;display:flex;flex-direction:column;gap:4px}
-.rec-title{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
-.rec-title b{font-size:1rem;overflow-wrap:anywhere}
-.rec-why{margin:2px 0;font-size:.88rem;line-height:1.5}
-.rec-acts{display:flex;gap:6px;flex-wrap:wrap;margin-top:4px}
-.rec-acts .ghost-btn{padding:6px 10px;font-size:.82rem;text-decoration:none}
-.rec-acts .ghost-btn:disabled{opacity:.5}
-.tag.new-pick{background:var(--gold-soft);color:var(--gold);font-weight:600;font-size:.72rem}
-.rec-src{display:flex;flex-direction:column;gap:4px;font-size:.82rem}
-.rec-src a{color:var(--accent);overflow-wrap:anywhere}
-.rec-entrypoint{max-width:100%;overflow-x:auto}
 .toggle{display:flex;align-items:center;gap:8px;font-size:.92rem;cursor:pointer}
 .toggle input{width:18px;height:18px;accent-color:var(--accent)}
 .plan{display:flex;flex-direction:column;gap:8px;padding:10px;border-radius:10px;background:var(--bg)}
@@ -369,7 +347,7 @@ details.done-box .rows{margin-top:8px}
 (function(){
 "use strict";
 /* ================= data ================= */
-const APP_VERSION="v16";
+const APP_VERSION="v17";
 const LS="checklist-v4", OLD=["todo-items-v3","todo-items-v1"];
 const DAYS=["일","월","화","수","목","금","토"], ORDER=[1,2,3,4,5,6,0];
 const GROUPS={input:"인풋",output:"아웃풋",etc:"기타"};
@@ -776,53 +754,12 @@ function makePlan(){
   const tasks=todayOpenTasks();
   if(!tasks.length){toast("오늘 남은 할 일이 없어요.");return;}
   const p=buildPlan(tasks,S.routine||DEFAULT_ROUTINE,nowMinutes());p.day=today();p.at=Date.now();
-  savePlan(p);scheduleNotifs();render();
+  savePlan(p);render();
   toast(p.blocks.length?`${p.blocks.length}개를 배정했어요.`+(p.left.length?` ${p.left.length}개는 시간이 부족해요.`:""):"남은 시간에 넣을 수 있는 일이 없어요.");
 }
 function itemByKey(k){const[c,id]=k.split("/");return (S[c]||[]).find(o=>o.id===id);}
 function keyDone(k){const o=itemByKey(k);if(!o)return null;return k.startsWith("quests/")?!!o.log[today()]:!!o.done;}
 
-/* 알림: 앱이 살아 있는 동안 시작 시각에 알려요 */
-let notifTimers=[];
-const notifOn=()=>{try{return localStorage.getItem("checklist-notify")==="1"&&"Notification" in window&&Notification.permission==="granted";}catch(e){return false;}};
-function scheduleNotifs(){
-  notifTimers.forEach(clearTimeout);notifTimers=[];
-  const p=loadPlan();if(!p||!notifOn())return;
-  const base=new Date();base.setHours(0,0,0,0);
-  p.blocks.forEach(b=>{
-    const at=base.getTime()+b.s*60000, wait=at-Date.now();
-    if(wait<=0||wait>20*3600000)return;
-    notifTimers.push(setTimeout(()=>{
-      if(keyDone(b.key))return;
-      const body=`${fmtMin(b.s)}~${fmtMin(b.e)} · ${fmtDur(b.e-b.s)}`;
-      const opt={body,tag:"plan-"+b.key,icon:"icon-192.png",badge:"icon-192.png"};
-      if(swReg&&swReg.showNotification)swReg.showNotification("지금 할 일: "+b.title,opt).catch(()=>{try{new Notification("지금 할 일: "+b.title,opt);}catch(e){}});
-      else try{new Notification("지금 할 일: "+b.title,opt);}catch(e){}
-    },wait));
-  });
-}
-async function toggleNotif(){
-  if(!("Notification" in window)){toast("이 브라우저는 알림을 지원하지 않아요.");return;}
-  if(notifOn()){try{localStorage.setItem("checklist-notify","0");}catch(e){}scheduleNotifs();render();toast("알림을 껐어요.");return;}
-  let perm=Notification.permission;
-  if(perm==="default")perm=await Notification.requestPermission();
-  if(perm!=="granted"){toast("알림이 차단돼 있어요. 휴대폰 설정 → 앱 → 크롬 → 알림에서 허용해 주세요.");return;}
-  try{localStorage.setItem("checklist-notify","1");}catch(e){}
-  scheduleNotifs();render();toast("일정 시작 시각에 알려 드릴게요.");
-}
-/* 캘린더 파일(.ics): 휴대폰 캘린더에 넣으면 앱을 닫아도 캘린더가 알려 줘요 */
-function exportIcs(){
-  const p=loadPlan();if(!p||!p.blocks.length)return;
-  const d0=new Date();d0.setHours(0,0,0,0);
-  const stamp=x=>{const d=new Date(d0.getTime()+x*60000);const z=n=>String(n).padStart(2,"0");return `${d.getFullYear()}${z(d.getMonth()+1)}${z(d.getDate())}T${z(d.getHours())}${z(d.getMinutes())}00`;};
-  const esc=t=>String(t).replace(/[\\,;]/g,m=>"\\"+m).replace(/\n/g," ");
-  const lines=["BEGIN:VCALENDAR","VERSION:2.0","PRODID:-//checklist//KO","CALSCALE:GREGORIAN"];
-  p.blocks.forEach((b,i)=>{lines.push("BEGIN:VEVENT",`UID:${p.day}-${i}-${b.key.replace("/","-")}@checklist`,`DTSTAMP:${stamp(nowMinutes())}`,`DTSTART:${stamp(b.s)}`,`DTEND:${stamp(b.e)}`,`SUMMARY:${esc(b.title)}`,"BEGIN:VALARM","ACTION:DISPLAY",`DESCRIPTION:${esc(b.title)}`,"TRIGGER:-PT5M","END:VALARM","END:VEVENT");});
-  lines.push("END:VCALENDAR");
-  const blob=new Blob([lines.join("\r\n")],{type:"text/calendar"});
-  const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=`오늘일정-${p.day}.ics`;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),3000);
-  toast("일정 파일을 받았어요. 알림에서 파일을 열어 캘린더에 추가해 주세요.");
-}
 const ICON_CLOCK='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>';
 const ICON_MOON='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>';
 function planCard(){
@@ -837,7 +774,7 @@ function planCard(){
   }
   const head=el("div","plan-head");head.append(el("b",null,"오늘 일정"));
   const re=el("button","ghost-btn","다시 배정");re.type="button";re.addEventListener("click",makePlan);
-  const clr=el("button","ghost-btn","지우기");clr.type="button";clr.addEventListener("click",()=>{savePlan(null);scheduleNotifs();render();});
+  const clr=el("button","ghost-btn","지우기");clr.type="button";clr.addEventListener("click",()=>{savePlan(null);render();});
   const hb=el("div","plan-hbtns");hb.append(re,clr);head.appendChild(hb);card.appendChild(head);
   const now=nowMinutes()+(nowMinutes()<toMin(R.wake)&&p.sleep>1440?1440:0);
   const rows=[...p.blocks.map(b=>({...b,t:"task"})),...p.meals.map(m=>({s:m.s,e:m.e,title:m.n+" 식사",t:"meal"}))].sort((a,b)=>a.s-b.s);
@@ -864,11 +801,6 @@ function planCard(){
   const planned=new Set([...p.blocks.map(b=>b.key),...p.left.map(b=>b.key)]);
   const fresh=open.filter(t=>!planned.has(t.key));
   if(fresh.length) card.appendChild(el("span","hint",`배정 후 새로 생긴 할 일 ${fresh.length}개가 있어요. '다시 배정'을 누르면 함께 넣어요.`));
-  const foot=el("div","btnrow");
-  const nb=el("button","btn soft",notifOn()?"알림 켜짐 · 끄기":"시작 시각에 알림 받기");nb.type="button";nb.addEventListener("click",toggleNotif);
-  const cb=el("button","btn soft","캘린더로 보내기");cb.type="button";cb.addEventListener("click",exportIcs);
-  foot.append(nb,cb);card.appendChild(foot);
-  card.appendChild(el("span","hint",notifOn()?"앱이 켜져 있거나 최근 앱 목록에 있을 때 알려요. 앱을 완전히 닫아도 받으려면 '캘린더로 보내기'를 써 주세요.":"'캘린더로 보내기'는 일정을 휴대폰 캘린더에 넣어서, 앱을 닫아도 캘린더가 5분 전에 알려 줘요."));
   return card;
 }
 function planTimeOf(key){const p=loadPlan();if(!p)return null;const b=p.blocks.find(x=>x.key===key);return b?fmtMin(b.s):null;}
@@ -1182,169 +1114,12 @@ function screenMission(v,id){
   v.appendChild(r);
 }
 
-/* ================= 추천 (Gemini + Google 검색) ================= */
-const REC_KINDS=[["any","아무거나"],["영화","영화"],["책","책"],["음악","음악"],["드라마","드라마"],["전시·공연","전시·공연"],["활동","해 볼 만한 활동"]];
-const REC_MODELS=["gemini-3.5-flash","gemini-3.5-flash-lite","gemini-3.1-flash-lite"];
-let recKind="any",recMood="",recBusy=false;
-let recLast=(()=>{try{return JSON.parse(localStorage.getItem("checklist-rec")||"null");}catch(e){return null;}})();
-let aiReady=null;
-function loadAi(){
-  if(aiReady)return aiReady;
-  aiReady=new Promise((ok,no)=>{if(window.FBAI)return ok();const sc=document.createElement("script");sc.src="vendor/fb-ai.js";sc.onload=ok;sc.onerror=()=>{aiReady=null;no(new Error("load"));};document.head.appendChild(sc);})
-    .then(()=>{const F=window.FBAI;const app=F.getApps().find(a=>a.name==="ai")||F.initializeApp(FIREBASE_CONFIG,"ai");return F.getAI(app,{backend:new F.GoogleAIBackend()});});
-  return aiReady;
-}
-function tasteProfile(){
-  const t=today(),lines=[];
-  const inp=S.items.filter(i=>i.group==="input");
-  const done=inp.filter(i=>i.done).slice(-25).map(i=>`${i.text}${i.sub?" ("+i.sub+")":""}`);
-  const open=inp.filter(i=>!i.done).slice(-15).map(i=>`${i.text}${i.sub?" ("+i.sub+")":""}`);
-  const reads=S.quests.filter(q=>q.read||q.group==="input").map(q=>`${q.title}${q.read?` (독서 ${q.read.cur}/${q.read.total}쪽)`:q.sub?" ("+q.sub+")":""}`).slice(-15);
-  const wishes=S.wishes.slice(-30).map(w=>`${w.text}${w.kind?" ("+w.kind+")":""}`);
-  const outs=S.items.filter(i=>i.group==="output").slice(-10).map(i=>i.text);
-  const missions=S.missions.map(m=>m.title+(m.done?" (달성)":""));
-  if(done.length)lines.push("이미 경험한 것: "+done.join(", "));
-  if(open.length)lines.push("하려고 적어 둔 것: "+open.join(", "));
-  if(reads.length)lines.push("반복·독서 중인 것: "+reads.join(", "));
-  if(wishes.length)lines.push("위시리스트: "+wishes.join(", "));
-  if(outs.length)lines.push("직접 만드는 것(아웃풋): "+outs.join(", "));
-  if(missions.length)lines.push("큰 목표: "+missions.join(", "));
-  const R=S.routine||DEFAULT_ROUTINE;
-  const d=new Date(),wd=DAYS[d.getDay()]+"요일";
-  let sleep=toMin(R.sleep);if(sleep<=toMin(R.wake))sleep+=1440;
-  const freeLeft=Math.max(0,sleep-nowMinutes()-todayOpenTasks().reduce((a,x)=>a+x.mins,0));
-  lines.push(`생활 패턴: ${R.wake} 기상, ${R.sleep} 취침. 오늘은 ${wd} ${fmtMin(nowMinutes())}, 오늘 할 일을 빼고 남은 여유 시간 약 ${fmtDur(freeLeft)}.`);
-  if(S.taste)lines.push("직접 적은 취향: "+S.taste);
-  return lines.join("\n");
-}
-function recPrompt(){
-  const kind=recKind==="any"?"영화·책·음악·드라마·전시·공연·활동 중 섞어서":recKind;
-  return `너는 사용자의 취향과 생활 패턴을 보고 경험해 볼 거리를 추천하는 큐레이터야. 한국에 사는 사용자이고 한국어로 답해.
-[사용자 정보]
-${tasteProfile()}
-${recMood?`[지금 원하는 것] ${recMood}\n`:""}
-[요청] ${kind} 추천 6개.
-- 사용자가 이미 적어 둔 것은 빼고, 실제로 존재하는 작품·활동만 추천해. 확실하지 않으면 Google 검색으로 확인해.
-- 4개는 취향에 잘 맞는 것, 2개는 평소라면 생각 못 했을 새로운 시도로 해 줘 (new: true).
-- 남은 여유 시간과 요일을 고려해서 지금 하기 좋은 길이인지도 생각해.
-- 한국에서 볼 수 있는 곳(OTT, 서점, 음원 서비스, 공연장 등)을 알면 적어.
-아래 JSON 배열만 출력해. 다른 말은 쓰지 마.
-[{"title":"제목","kind":"영화|책|음악|드라마|전시·공연|활동","creator":"감독·작가·아티스트 등","year":"연도 또는 기간","length":"예: 2시간 10분, 320쪽, 앨범 45분","where":"볼 수 있는 곳","why":"이 사용자에게 추천하는 이유 1~2문장","new":false}]`;
-}
-function parseRecs(text){
-  const a=text.indexOf("["),b=text.lastIndexOf("]");
-  if(a<0||b<=a)throw new Error("format");
-  const arr=JSON.parse(text.slice(a,b+1));
-  return arr.filter(x=>x&&x.title).slice(0,8).map(x=>({title:String(x.title),kind:String(x.kind||""),creator:String(x.creator||""),year:String(x.year||""),length:String(x.length||""),where:String(x.where||""),why:String(x.why||""),isNew:!!x.new}));
-}
-async function runRecommend(){
-  if(recBusy)return;recBusy=true;render();
-  let err="";
-  try{
-    const ai=await loadAi(),F=window.FBAI,prompt=recPrompt();
-    let out=null;
-    for(const model of REC_MODELS){
-      for(const grounded of [true,false]){
-        try{
-          const m=F.getGenerativeModel(ai,{model,...(grounded?{tools:[{googleSearch:{}}]}:{}),generationConfig:{temperature:0.9}});
-          const r=await m.generateContent(prompt);
-          const resp=r.response,text=resp.text();
-          const meta=resp.candidates&&resp.candidates[0]&&resp.candidates[0].groundingMetadata;
-          out={items:parseRecs(text),grounded:!!meta,entry:meta&&meta.searchEntryPoint?meta.searchEntryPoint.renderedContent:"",
-            sources:((meta&&meta.groundingChunks)||[]).map(c=>c.web).filter(w=>w&&w.uri).slice(0,8).map(w=>({title:w.title||w.uri,uri:w.uri})),model};
-          break;
-        }catch(e){
-          const msg=String(e&&e.message||e);
-          if(/API has not been used|disabled|PERMISSION_DENIED|403|api-not-enabled|firebasevertexai|firebaseml/i.test(msg)){throw Object.assign(new Error("setup"),{setup:true,raw:msg});}
-          if(msg==="format"){err="추천 결과를 정리하지 못했어요. 다시 눌러 주세요.";continue;}
-          err=msg;
-        }
-      }
-      if(out)break;
-    }
-    if(!out)throw new Error(err||"fail");
-    recLast={...out,at:Date.now(),kind:recKind,mood:recMood};
-    try{localStorage.setItem("checklist-rec",JSON.stringify(recLast));}catch(e){}
-  }catch(e){
-    if(e.setup)toast("Firebase에서 AI Logic을 먼저 켜 주세요. 추천 화면 아래 안내를 확인해 주세요.");
-    else if(String(e.message).includes("load"))toast("인터넷에 연결되면 추천을 받을 수 있어요.");
-    else if(/quota|429|RESOURCE_EXHAUSTED/i.test(String(e.message)))toast("오늘 무료 사용량을 다 썼어요. 잠시 뒤에 다시 시도해 주세요.");
-    else toast("추천을 받지 못했어요. 잠시 후 다시 시도해 주세요.");
-    recSetupNeeded=!!e.setup;
-    if(window.console)console.warn("rec",e&&e.raw||e);
-  }
-  recBusy=false;render();
-}
-let recSetupNeeded=false;
-const ICON_SPARK='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+ICONS.sparkles+'</svg>';
-function recEntry(label){
-  const b=el("button","rec-entry");b.type="button";
-  const i=el("span","re-ic");i.innerHTML=ICON_SPARK;
-  const t=el("span","re-tx");t.append(el("b",null,label||"취향 맞춤 추천 받기"),el("span",null,"적어 둔 인풋과 위시를 보고 영화·책·음악을 골라 드려요"));
-  b.append(i,t,el("span","chev","›"));b.addEventListener("click",()=>go("recommend"));return b;
-}
-function recKindToWish(k){if(!k)return "";if(k==="활동")return "";return k;}
-function screenRecommend(v){
-  v.appendChild(el("p","hint","지금까지 적은 인풋·위시·독서 기록과 생활 시간을 바탕으로, 인터넷에서 확인한 실제 작품을 추천해요. 추천을 받을 때 이 목록의 제목들이 Google Gemini로 전송돼요."));
-  v.appendChild(field("무엇을 추천받을까요?",seg("rec",REC_KINDS,recKind,k=>{recKind=k;})));
-  const mood=el("input");mood.type="text";mood.id="rec-mood";mood.maxLength=80;mood.placeholder="예: 주말 저녁, 가볍게 웃을 수 있는 것";mood.value=recMood;
-  mood.addEventListener("input",()=>recMood=mood.value);
-  v.appendChild(field("지금 원하는 느낌 (선택)",mood));
-  const tw=el("details","taste-box");tw.appendChild(el("summary",null,S.taste?"내 취향 메모 · 적어 둠":"내 취향 알려 주기 (선택)"));
-  const ta=el("textarea");ta.id="rec-taste";ta.rows=3;ta.maxLength=500;ta.placeholder="예: SF와 다큐 좋아함, 공포는 싫음, 한국 인디 음악 즐겨 들음";ta.value=S.taste||"";
-  ta.addEventListener("change",()=>{S.taste=ta.value.trim();save();});
-  tw.appendChild(ta);v.appendChild(tw);
-  const go1=el("button","btn rec-go",recBusy?"찾는 중… (10~20초)":"추천 받기");go1.type="button";go1.disabled=recBusy;go1.addEventListener("click",runRecommend);
-  v.appendChild(go1);
-  if(recSetupNeeded){
-    const p=el("div","panel");p.appendChild(el("h3",null,"추천을 쓰려면 한 번만 설정해 주세요"));
-    ["Firebase 콘솔(console.firebase.google.com)에서 todolist 프로젝트를 엽니다.","왼쪽 ≡ 메뉴에서 AI 아래 'AI Logic'을 누릅니다. 안 보이면 위쪽 검색창에 AI Logic을 입력하세요.","'시작하기'를 누르고 'Gemini Developer API'를 고릅니다. 결제 없이 쓰는 무료 요금제예요.","'API 사용 설정'까지 누르면 끝이에요. 1~2분 뒤 다시 추천 받기를 눌러 주세요."].forEach((t,i)=>p.appendChild(el("span","hint",`${i+1}. ${t}`)));
-    v.appendChild(p);
-  }
-  if(!recLast)return;
-  const sec=el("div","sec");const when=new Date(recLast.at);
-  sec.append(el("h3",null,"추천"),el("span",null,`${when.getMonth()+1}/${when.getDate()} ${fmtMin(when.getHours()*60+when.getMinutes())}${recLast.grounded?" · Google 검색 확인":""}`));v.appendChild(sec);
-  const rows=el("div","rows");
-  recLast.items.forEach(it=>{
-    const c=el("div","rec-card");
-    const sc=it.kind==="음악"?"wish":"input";
-    const nm=it.kind==="책"?"책":it.kind;
-    const ico=catIco({kind:nm});c.appendChild(ico);
-    const body=el("div","rec-body");
-    const h=el("div","rec-title");h.append(el("b",null,it.title));if(it.isNew)h.appendChild(el("span","tag new-pick","새로운 시도"));
-    body.appendChild(h);
-    const meta=[it.kind,it.creator,it.year,it.length].filter(Boolean).join(" · ");if(meta)body.appendChild(el("span","q-info",meta));
-    if(it.why)body.appendChild(el("p","rec-why",it.why));
-    if(it.where)body.appendChild(el("span","q-info","볼 곳: "+it.where));
-    const acts=el("div","rec-acts");
-    const exists=S.wishes.some(w=>w.text===it.title);
-    const w=el("button","ghost-btn",exists?"위시에 있음":"위시에 담기");w.type="button";w.disabled=exists;
-    w.addEventListener("click",()=>{const k=recKindToWish(it.kind);if(k&&!S.wishKinds.includes(k))addCat("wish",k);
-      S.wishes.push({id:uid(),text:it.title,kind:k,memo:[it.creator,it.where].filter(Boolean).join(" · "),done:false,created:Date.now()});save();render();toast("위시리스트에 담았어요.");});
-    const td=el("button","ghost-btn","할 일로");td.type="button";
-    td.addEventListener("click",()=>openSheet({mode:"new",title:it.title,group:"input",sub:wishToSub(recKindToWish(it.kind)||"")}));
-    const lk=el("a","ghost-btn","검색");lk.href="https://www.google.com/search?q="+encodeURIComponent(it.title+" "+(it.creator||""));lk.target="_blank";lk.rel="noopener";
-    acts.append(w,td,lk);body.appendChild(acts);
-    c.appendChild(body);rows.appendChild(c);
-  });
-  v.appendChild(rows);
-  if(recLast.sources&&recLast.sources.length){
-    const src=el("div","rec-src");src.appendChild(el("span","lbl","참고한 출처"));
-    recLast.sources.forEach(x=>{const a=el("a",null,x.title);a.href=x.uri;a.target="_blank";a.rel="noopener";src.appendChild(a);});
-    v.appendChild(src);
-  }
-  if(recLast.entry){
-    const host=el("div","rec-entrypoint");const sh=host.attachShadow({mode:"open"});sh.innerHTML=recLast.entry;v.appendChild(host);
-  }
-}
-
 /* ================= wishlist ================= */
 let wishFilter="";
 const ICON_MOVE='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h13M13 6l6 6-6 6"/></svg>';
 function screenWish(v){
   const head=el("div","group-head wish");head.append(el("span","numeral","위시리스트"),el("p",null,"언젠가 보고 싶은 영화, 읽고 싶은 책처럼 일정은 없지만 담아 두고 싶은 것들. 할 때가 되면 → 버튼으로 할 일에 옮겨요."));
   v.appendChild(head);
-  v.appendChild(recEntry("위시에 담을 거리 추천 받기"));
   if(wishFilter&&wishFilter!=="__none"&&!S.wishKinds.includes(wishFilter))wishFilter="";
   const f=el("form","inline-form");
   const inp=el("input");inp.type="text";inp.id="newWish";inp.maxLength=120;inp.placeholder=wishFilter&&wishFilter!=="__none"?`${wishFilter}에 담기`:"보고 싶은 것, 하고 싶은 것 담기";inp.setAttribute("aria-label","새 위시");
@@ -1394,7 +1169,6 @@ let groupFilter={input:"",output:"",etc:""};
 function screenGroup(v,g){
   const head=el("div","group-head "+g);head.append(el("span","numeral",GROUPS[g]),el("p",null,GDESC[g]));
   v.appendChild(head);
-  if(g==="input")v.appendChild(recEntry());
   const sel=el("select");sel.id="gfilter-"+g;sel.setAttribute("aria-label","세부 카테고리");
   const used=new Set(S.subs[g]);[...S.items,...S.quests].forEach(o=>{if(o.group===g&&o.sub)used.add(o.sub);});
   const opt=(val,t)=>{const o=el("option",null,t);o.value=val;sel.appendChild(o);};
@@ -1541,13 +1315,12 @@ function render(){
   v.innerHTML="";
   const home=r==="home";
   $("backBtn").hidden=home; $("backSpacer").hidden=true; $("syncBtn").hidden=!home;
-  $("fab").hidden=r==="settings"||r==="recommend";
+  $("fab").hidden=r==="settings";
   if(home){setTitle("");screenHome(v);}
   else if(r==="missions"){setTitle("메인 미션");screenMissions(v);}
   else if(r.startsWith("mission/")){screenMission(v,r.slice(8));}
   else if(GKEYS.includes(r)){setTitle(GROUPS[r]);screenGroup(v,r);}
   else if(r==="wish"){setTitle("위시리스트");screenWish(v);}
-  else if(r==="recommend"){setTitle("추천");screenRecommend(v);}
   else if(r==="settings"){setTitle("설정");screenSettings(v);}
   else {go("home",true);return render();}
   window.scrollTo(0,y);
@@ -1912,8 +1685,6 @@ document.addEventListener("keydown",e=>{if(e.key==="Escape")closeSheet();});
 
 /* ================= boot ================= */
 load(); lastSeen=seenMap(); render(); if(!loadFailed){takeSnapshot();snapTaken=true;}
-scheduleNotifs();
-document.addEventListener("visibilitychange",()=>{if(!document.hidden)scheduleNotifs();});
 setTimeout(()=>{if(!loadFailed)Sync.init();else Sync.set("error","저장된 데이터를 먼저 복원해 주세요.");},300);
 let lastDay=today();
 setInterval(()=>{if(today()!==lastDay){lastDay=today();render();}},60000);
