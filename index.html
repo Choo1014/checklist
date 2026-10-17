@@ -402,7 +402,7 @@ details.done-box .rows{margin-top:8px}
 (function(){
 "use strict";
 /* ================= data ================= */
-const APP_VERSION="v21";
+const APP_VERSION="v22";
 const LS="checklist-v4", OLD=["todo-items-v3","todo-items-v1"];
 const DAYS=["일","월","화","수","목","금","토"], ORDER=[1,2,3,4,5,6,0];
 const GROUPS={input:"인풋",output:"아웃풋",etc:"기타"};
@@ -1116,7 +1116,7 @@ function questRow(q,opts={}){
   if(q.read){
     const r=q.read,ri=readToday(q),U=unitOf(q);
     const a=el("span","row-amount");
-    a.append(el("b",null,`${r.cur} / ${r.total}${U.u}`)," ",el("span",null,on?`· 오늘 ${r.cur-ri.base}${U.u} ${U.did}`:`· 오늘 목표 ${ri.target-ri.base}${U.u}`));
+    a.append(el("b",null,`${r.cur} / ${r.total}${U.u}`)," ",el("span",null,on?`· 오늘 ${r.cur-ri.base}${U.u} ${U.did}`:`· 오늘 ${ri.target}${U.u}까지 (${ri.target-ri.base}${U.u})`));
     main.appendChild(a);
     const bar=el("div","bar2 read-bar"),sp=el("span");sp.style.width=(r.cur/r.total*100)+"%";bar.appendChild(sp);main.appendChild(bar);
   }
@@ -1916,48 +1916,59 @@ function openSheet(o){
 /* ---- 분량 기록: 오늘 한 만큼 입력 → 게이지 미리보기 → 등록 ---- */
 function logSheet(sh,o){
   const q=S.quests.find(x=>x.id===o.id);if(!q||!q.read){closeSheet();return;}
-  const r=q.read,U=unitOf(q),ri=readToday(q);
-  const todayDone=ri.logged?r.cur-ri.base:0, per=Math.max(0,ri.target-ri.base);
+  const r=q.read,U=unitOf(q),ri=readToday(q),isMin=r.unit==="min";
+  const per=Math.max(0,ri.target-ri.base);
+  const show=n=>isMin&&n>=60?`${n}분(${Math.floor(n/60)}:${String(n%60).padStart(2,"0")})`:`${n}${U.u}`;
   sh.appendChild(el("h3",null,q.title));
   const stat=el("div","read-stat");
   [[`${r.cur}/${r.total}`,"지금까지"],[`${r.total-r.cur}${U.u}`,"남은 분량"],[ri.overdue?"지남":`${ri.left}일`,"남은 날"]].forEach(([b,l])=>{const d=el("div");d.append(el("b",null,b),el("span",null,l));stat.appendChild(d);});
   sh.appendChild(stat);
-  sh.appendChild(el("span","hint",r.cur>=r.total&&!ri.logged?"이미 다 끝났어요.":ri.overdue?`목표일이 지났어요. 남은 ${r.total-ri.base}${U.u}를 오늘 목표로 잡았어요.`:`오늘 목표는 ${per}${U.u}예요`+(r.unit==="ep"&&r.epMin?` (약 ${fmtDur(per*r.epMin)})`:"")+". 더 하거나 덜 해도 남은 날에 맞춰 다시 계산해요."));
-  const pin=el("div","page-in");const inp=el("input");inp.type="number";inp.min="0";inp.max=String(r.total-ri.base);inp.inputMode="numeric";inp.id="log-amt";
-  inp.value=ri.logged?String(todayDone):"";inp.placeholder=String(per);inp.setAttribute("aria-label",`오늘 한 ${U.u} 수`);
-  pin.append(inp,el("span",null,U.u));
-  sh.appendChild(field(`오늘 몇 ${U.u} ${U.verb}?`,pin));
+  sh.appendChild(el("span","hint",r.cur>=r.total&&!ri.logged?"이미 다 끝났어요.":ri.overdue?`목표일이 지났어요. 끝(${show(r.total)})까지를 오늘 목표로 잡았어요.`:`오늘 목표는 ${show(ri.target)}까지예요 (${per}${U.u}`+(r.unit==="ep"&&r.epMin?`, 약 ${fmtDur(per*r.epMin)}`:"")+"). 더 하거나 덜 해도 남은 날에 맞춰 다시 계산해요."));
+  const pin=el("div","page-in");const inp=el("input");
+  if(isMin){inp.type="text";inp.inputMode="decimal";inp.placeholder=`예: ${ri.target} 또는 ${Math.floor(ri.target/60)}:${String(ri.target%60).padStart(2,"0")}`;}
+  else{inp.type="number";inp.min="0";inp.max=String(r.total);inp.inputMode="numeric";inp.placeholder=String(ri.target);}
+  inp.id="log-pos";inp.value=ri.logged?String(r.cur):"";inp.setAttribute("aria-label",`지금 몇 ${U.u}까지`);
+  pin.append(inp,el("span",null,`${U.u}까지 / ${r.total}${U.u}`));
+  sh.appendChild(field(`지금 몇 ${U.u}까지 ${U.verb}?`,pin));
   const g=el("div","gauge "+"hue"+metaOf(q.group,q.sub).c);
   const gDone=el("span","g-done"),gToday=el("span","g-today"),gMark=el("span","g-mark");
   g.append(gDone,gToday,gMark);sh.appendChild(g);
   const gTxt=el("div","preview");sh.appendChild(gTxt);
   const pct=x=>Math.max(0,Math.min(100,x/r.total*100))+"%";
-  gDone.style.width=pct(ri.base);gMark.style.left=pct(ri.base+per);
+  gMark.style.left=pct(ri.target);
+  // "85", "1:25", "1시간 25분" 모두 받아요 (영상은 분)
+  function parsePos(raw){
+    raw=String(raw).trim();if(raw==="")return null;
+    if(isMin){const hm=raw.match(/^(\d+)\s*[:시]\s*(\d{1,2})/);if(hm)return +hm[1]*60+ +hm[2];const h=raw.match(/^(\d+)\s*시간\s*(\d+)?/);if(h)return +h[1]*60+(+h[2]||0);}
+    const n=parseInt(raw.replace(/[^\d]/g,""),10);return isNaN(n)?null:n;
+  }
   function upd(){
-    const raw=inp.value.trim(),v=Math.max(0,Math.min(r.total-ri.base,parseInt(raw||"0",10)||0));
-    gToday.style.left=pct(ri.base);gToday.style.width=pct(v);
-    const ok=v>=per&&v>0;g.classList.toggle("ok",ok);g.classList.toggle("short",!ok&&v>0);
-    gTxt.classList.remove("err");
-    if(!raw){gTxt.textContent=`목표 ${per}${U.u} · 숫자를 넣으면 미리 보여 드려요`;return;}
-    const after=ri.base+v,left=r.total-after;
-    if(left<=0){gTxt.textContent=U.fin;return;}
-    const nd=readDaysFrom(q,tomorrowYmd());
-    const next=nd?Math.ceil(left/nd):left;
-    const diff=v-per;
-    gTxt.textContent=(diff>=0?(diff?`목표보다 ${diff}${U.u} 더 했어요`:"목표를 채웠어요"):`목표까지 ${-diff}${U.u} 모자라요`)+
+    const p=parsePos(inp.value);
+    gDone.style.width=pct(Math.min(ri.base,p==null?ri.base:p));
+    if(p==null){gToday.style.width="0";g.classList.remove("ok","short");gTxt.classList.remove("err");gTxt.textContent=`오늘 목표 ${show(ri.target)}까지 · 숫자를 넣으면 미리 보여 드려요`;return;}
+    const pos=Math.min(r.total,p),v=pos-ri.base;
+    gToday.style.left=pct(ri.base);gToday.style.width=pct(Math.max(0,v));
+    const ok=pos>=ri.target&&v>0;g.classList.toggle("ok",ok);g.classList.toggle("short",!ok&&v>0);
+    gTxt.classList.toggle("err",p>r.total);
+    if(p>r.total){gTxt.textContent=`전체가 ${show(r.total)}이에요. 끝까지 본 걸로 기록할게요.`;}
+    if(v<=0){gTxt.textContent=v<0?`어제까지 기록(${show(ri.base)})보다 앞이에요. ${show(pos)}로 고쳐서 기록할게요.`:`오늘 기록이 없어요 (지금까지 ${show(ri.base)})`;return;}
+    const left=r.total-pos;
+    if(left<=0){gTxt.textContent=`오늘 ${v}${U.u} · ${U.fin}`;return;}
+    const nd=readDaysFrom(q,tomorrowYmd()),next=nd?Math.ceil(left/nd):left,diff=pos-ri.target;
+    gTxt.textContent=`오늘 ${v}${U.u} · `+(diff>=0?(diff?`목표보다 ${diff}${U.u} 더 했어요`:"목표를 채웠어요"):`목표까지 ${-diff}${U.u} 모자라요`)+
       (nd?` · 남은 ${nd}일 동안 하루 약 ${next}${U.u}`:` · 남은 ${left}${U.u}`)+(nd&&next!==per?(next>per?" (늘어나요)":" (줄어요)"):"");
   }
   inp.addEventListener("input",upd);upd();
-  const qk=el("div","quick");[["목표만큼",per],[`+${r.unit==="ep"?1:10}${UNITS[r.unit||"page"].u}`,null]].forEach(([l,v])=>{const b=el("button",null,l);b.type="button";
-    b.addEventListener("click",()=>{inp.value=String(v==null?(parseInt(inp.value||"0",10)||0)+(r.unit==="ep"?1:10):v);upd();});qk.appendChild(b);});
+  const qk=el("div","quick");[[`목표 ${show(ri.target)}`,ri.target],["끝까지",r.total]].forEach(([l,v])=>{const b=el("button",null,l);b.type="button";
+    b.addEventListener("click",()=>{inp.value=String(v);upd();});qk.appendChild(b);});
   sh.appendChild(qk);
   const br=el("div","btnrow");const sv=el("button","btn","등록");sv.type="submit";br.appendChild(sv);
   if(ri.logged){const cl=el("button","btn soft","오늘 기록 지우기");cl.type="button";cl.addEventListener("click",()=>{setReadPage(q,ri.base);save();closeSheet();render();toast("오늘 기록을 지웠어요.");});br.appendChild(cl);}
   const ed=el("button","btn soft","계획 수정");ed.type="button";ed.addEventListener("click",()=>openSheet({mode:"edit-quest",id:q.id}));br.appendChild(ed);
   sh.appendChild(br);
-  sh.addEventListener("submit",e=>{e.preventDefault();const raw=inp.value.trim();if(raw===""){inp.focus();return;}
-    const v=Math.max(0,parseInt(raw,10)||0);setReadPage(q,ri.base+v);save();closeSheet();render();
-    if(q.read.cur<q.read.total)toast(v?`오늘 ${v}${U.u} 기록했어요.`:"오늘 기록을 비웠어요.");});
+  sh.addEventListener("submit",e=>{e.preventDefault();const p=parsePos(inp.value);if(p==null){inp.focus();return;}
+    const pos=Math.min(r.total,p);setReadPage(q,pos);save();closeSheet();render();
+    if(q.read.cur<q.read.total)toast(`${show(pos)}까지 기록했어요.`);});
   setTimeout(()=>inp.focus(),50);
 }
 
