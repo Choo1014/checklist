@@ -338,27 +338,46 @@ details.done-box .rows{margin-top:8px}
 .gauge.short .g-today{background:#e2b93b}
 .gauge.ok .g-today{background:#3fa66a}
 .gauge .g-mark{position:absolute;top:-2px;bottom:-2px;width:2px;background:var(--fg);transform:translateX(-1px)}
-.sch-tray{display:flex;gap:6px;flex-wrap:wrap}
+.sch-tray{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;margin:0 -16px;padding:0 16px}
+.sch-tray::-webkit-scrollbar{display:none}
+.sch-tray .sch-chip{flex:none;max-width:70vw}
 .sch-chip{display:inline-flex;align-items:center;gap:6px;padding:5px 10px 5px 5px;border:1px solid var(--line);border-radius:999px;background:var(--card);font-size:.88rem;max-width:100%}
 .sch-chip .sc-t{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
 .sch-chip .sc-d,.pick-row .sc-d{font-size:.75rem;color:var(--muted);white-space:nowrap}
 .sch-chip[aria-pressed="true"]{border-color:var(--accent);background:var(--accent-soft);box-shadow:0 0 0 2px var(--accent-soft)}
 .sch-pickbar{position:sticky;top:calc(env(safe-area-inset-top,0px) + 56px);z-index:4;display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:10px;background:var(--bg);border:1px solid var(--line);font-size:.82rem;color:var(--muted)}
 .sch-pickbar span{flex:1}
-.sch-date{display:flex;flex-direction:column;gap:8px;margin-bottom:6px}
-.sd-top{display:flex;align-items:center;gap:6px}
+.sch-head{position:sticky;top:calc(env(safe-area-inset-top,0px) + 56px);z-index:5;background:var(--bg);margin:0 -16px;padding:2px 16px 8px;display:flex;flex-direction:column;gap:6px;border-bottom:1px solid var(--line)}
+.day-bar{display:flex;flex-direction:column;gap:4px}
+.sd-today,.sd-sched,.sd-ic{display:inline-flex;align-items:center;gap:5px;height:32px;padding:0 12px;border-radius:999px;border:1px solid var(--line);background:var(--card);color:var(--fg);font-size:.82rem;font-weight:600;flex:none}
+.sd-ic{width:32px;padding:0;justify-content:center;color:var(--muted)}
+.sd-sched span,.sd-ic{line-height:0}.sd-sched svg,.sd-ic svg{width:15px;height:15px}
+.sd-caret{font-size:.7rem;color:var(--muted);margin-left:4px}
+.st-l{font-size:.75rem;color:var(--muted);white-space:nowrap;flex:none;align-self:center}
+.three{display:grid;grid-template-columns:1.3fr 1fr .8fr;gap:8px}
+.cal-pop{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(env(safe-area-inset-bottom,0px) + 16px);width:min(528px,calc(100% - 32px));z-index:7;display:flex;align-items:center;gap:10px;padding:8px 8px 8px 14px;border-radius:16px;background:var(--go-bg);color:var(--go-fg);box-shadow:0 8px 24px rgba(0,0,0,.22);animation:up .2s ease-out}
+.cal-pop[hidden]{display:none}
+.cp-ic{line-height:0}.cp-ic svg{width:18px;height:18px}
+.cp-t{flex:1;min-width:0;font-weight:600;font-size:.9rem;display:flex;flex-direction:column}
+.cp-t small{font-weight:400;font-size:.75rem;opacity:.8}
+.cp-btn{padding:8px 16px;border-radius:12px;background:var(--btn-bg);color:var(--btn-fg);font-weight:700;flex:none}
+.calpop-on .fab{bottom:calc(env(safe-area-inset-bottom,0px) + 84px)}
+.calpop-on main{padding-bottom:calc(env(safe-area-inset-bottom,0px) + 160px)}
+.sd-top{display:flex;align-items:center;gap:6px;min-height:36px}
 .sd-arrow{width:36px;height:36px;border-radius:10px;border:1px solid var(--line);background:var(--card);color:var(--fg);font-size:1.2rem;line-height:1}
-.sd-label{position:relative;flex:1;text-align:center;font-weight:700;padding:8px 6px;border-radius:10px;background:var(--card);border:1px solid var(--line)}
+.sd-label{position:relative;flex:1;font-weight:700;font-size:1.05rem;padding:4px 2px;display:flex;align-items:center}
 .sd-label input{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer;border:0;padding:0}
 .sd-label input::-webkit-calendar-picker-indicator{position:absolute;inset:0;width:100%;height:100%;cursor:pointer}
 .sd-strip{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
-.sd-day{display:flex;flex-direction:column;align-items:center;gap:1px;padding:6px 0;border-radius:10px;border:1px solid transparent;background:none;color:var(--fg)}
-.sd-day .sd-w{font-size:.7rem;color:var(--muted)}
-.sd-day .sd-n{font-weight:700}
-.sd-day .sd-c{font-size:.66rem;color:var(--muted);min-height:1em}
-.sd-day.past{opacity:.55}
-.sd-day.today .sd-n{color:var(--accent)}
-.sd-day[aria-pressed="true"]{background:var(--card);border-color:var(--line);opacity:1}
+.sd-day{display:flex;flex-direction:column;align-items:center;gap:1px;padding:2px 0;background:none;color:var(--fg)}
+.sd-day .sd-w{font-size:.68rem;color:var(--muted)}
+.sd-day.sun .sd-w{color:#d9534f}.sd-day.sat .sd-w{color:var(--in)}
+.sd-day .sd-n{width:30px;height:30px;border-radius:50%;display:grid;place-content:center;font-weight:600;font-size:.92rem;font-variant-numeric:tabular-nums}
+.sd-day .sd-dot{width:4px;height:4px;border-radius:50%;background:transparent}
+.sd-day .sd-dot.on{background:var(--muted)}
+.sd-day.past .sd-n{color:var(--muted)}
+.sd-day.today .sd-n{color:var(--accent);font-weight:800}
+.sd-day[aria-pressed="true"] .sd-n{background:var(--accent);color:var(--card)}
 .cal-off{display:flex;justify-content:flex-end;margin-top:8px}
 .sch-pickbar .ghost-btn{padding:4px 10px}
 .sch-grid{position:relative;margin-left:44px;border-left:1px solid var(--line)}
@@ -373,7 +392,8 @@ details.done-box .rows{margin-top:8px}
 .sch-block{position:absolute;background:var(--hs);color:var(--fg);border-left:4px solid var(--hc);border-radius:8px;padding:3px 8px;overflow:hidden;display:flex;flex-direction:column;touch-action:none;box-shadow:0 1px 2px rgba(0,0,0,.08);cursor:grab}
 .sch-block .sb-t{font-size:.82rem;font-weight:600;line-height:1.25;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .sch-block .sb-m{font-size:.7rem;color:var(--muted);font-variant-numeric:tabular-nums}
-.sch-block.drag{opacity:.85;box-shadow:0 6px 16px rgba(0,0,0,.2);z-index:3}
+.sch-block{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+.sch-block.drag{opacity:.9;box-shadow:0 8px 20px rgba(0,0,0,.28);z-index:3;transform:scale(1.02);outline:2px solid var(--hc)}
 .sch-block.done .sb-t{text-decoration:line-through;color:var(--muted)}
 .pick-list{display:flex;flex-direction:column;gap:6px}
 .pick-row{display:flex;align-items:center;gap:8px;padding:8px 10px;border:1px solid var(--line);border-radius:10px;background:var(--bg);text-align:left}
@@ -418,7 +438,7 @@ details.done-box .rows{margin-top:8px}
 (function(){
 "use strict";
 /* ================= data ================= */
-const APP_VERSION="v24";
+const APP_VERSION="v25";
 const LS="checklist-v4", OLD=["todo-items-v3","todo-items-v1"];
 const DAYS=["일","월","화","수","목","금","토"], ORDER=[1,2,3,4,5,6,0];
 const GROUPS={input:"인풋",output:"아웃풋",etc:"기타"};
@@ -429,7 +449,7 @@ const OLD_WISH_KINDS=["보고 싶은 것","하고 싶은 것","가고 싶은 곳
 const WISH_KINDS=["영화","책","드라마","전시·공연","여행","맛집"];
 const DEFAULT_ROUTINE={wake:"07:30",sleep:"23:30",gap:10,meals:[{n:"아침",s:"08:00",e:"08:30"},{n:"점심",s:"12:00",e:"13:00"},{n:"저녁",s:"18:30",e:"19:30"}]};
 let S={taste:"",routine:JSON.parse(JSON.stringify(DEFAULT_ROUTINE)),catMeta:{},items:[],quests:[],missions:[],wishes:[],wishKinds:WISH_KINDS.slice(),subs:{input:["독서","공부","영화","시리즈","액티비티"],output:["그림","글쓰기","만들기"],etc:["생활","업무","약속"]}};
-let homeLimit=8, homeMission="", homeTab="today";
+let homeLimit=8, homeMission="", homeTab="today", homeDay="";
 try{const ht=localStorage.getItem("checklist-hometab");if(ht==="all"||ht==="mission"||ht==="today")homeTab=ht;}catch(e){}
 
 const $=id=>document.getElementById(id);
@@ -940,10 +960,10 @@ function fillCalBar(w){
     tx.append(el("b",null,"캘린더 연동 문제"),el("span",null,Cal.err));
     btn=el("button","btn soft","다시 연결");btn.addEventListener("click",()=>Cal.connect());
   } else if(n){
-    tx.append(el("b",null,`캘린더에 아직 안 보낸 변경 ${n}개`),el("span",null,"일정을 다 배치했으면 '적용'을 눌러 한 번에 보내세요."+(Cal.valid()?"":" 구글 확인 창이 한 번 뜰 수 있어요.")));
-    btn=el("button","btn","적용");btn.id="calApply";btn.addEventListener("click",()=>Cal.apply());
+    tx.append(el("b",null,`미등록 스케쥴 ${n}개`),el("span",null,"'적용'을 누르면 한 번에 보내요."+(Cal.valid()?"":" 구글 확인 창이 한 번 뜰 수 있어요.")));
+    btn=el("button","btn","적용");btn.addEventListener("click",()=>Cal.apply());
   } else {
-    tx.append(el("b",null,"구글 캘린더에 모두 반영됨"),el("span",null,(Cal.calId()?"전용 캘린더로 보내요. ":"기본 캘린더에 세이지 색으로 보내요. ")+"바꾼 뒤 '적용'을 누르면 그때 반영돼요."));
+    tx.append(el("b",null,"구글 캘린더에 모두 반영됨"),el("span",null,(Cal.calId()?"전용 캘린더로 보내요. ":"기본 캘린더에 세이지 색으로 보내요. ")+"스케쥴을 바꾸면 아래에 뜨는 '적용'을 눌러 반영해요."));
   }
   w.appendChild(tx);if(btn){btn.type="button";w.appendChild(btn);}
   if(Cal.on()){
@@ -958,83 +978,97 @@ function fillCalBar(w){
     w.appendChild(d);
   }
 }
-function paintCal(){const w=document.getElementById("calBar");if(w)fillCalBar(w);}
+function paintCal(){const w=document.getElementById("calBar");if(w)fillCalBar(w);paintCalPop();}
+/* 아래쪽 팝업 바: 캘린더에 보낼 변경이 생기면 나타나요 */
+function paintCalPop(){
+  let p=document.getElementById("calPop");
+  if(!p){p=el("div","cal-pop");p.id="calPop";p.setAttribute("role","status");document.body.appendChild(p);}
+  const r=route(),n=Cal.on()?Cal.pending():0;
+  const show=(r==="home"||r==="schedule")&&Cal.on()&&(n>0||Cal.busy||!!Cal.err)&&!document.querySelector(".scrim");
+  p.hidden=!show;document.body.classList.toggle("calpop-on",show);
+  if(!show)return;
+  p.innerHTML="";const ic=el("span","cp-ic");ic.innerHTML=ICON_CAL;p.appendChild(ic);
+  if(Cal.busy){p.appendChild(el("span","cp-t","구글 캘린더에 보내는 중…"));return;}
+  if(Cal.err){
+    const t=el("span","cp-t");t.append(el("b",null,"캘린더 반영 실패"),el("small",null,Cal.err));p.appendChild(t);
+    const bt=el("button","cp-btn","다시 연결");bt.type="button";bt.addEventListener("click",()=>Cal.connect());p.appendChild(bt);return;
+  }
+  p.appendChild(el("span","cp-t",`미등록 스케쥴 ${n}개`));
+  const bt=el("button","cp-btn","적용");bt.type="button";bt.id="calApply";bt.addEventListener("click",()=>Cal.apply());p.appendChild(bt);
+}
 function placeBlock(key,s,mins,d){
   d=d||schedDate;const arr=schedDay(d).filter(b=>b.key!==key);
   s=Math.max(0,Math.min(1440-5,Math.round(s/5)*5));
   arr.push({key,s,e:Math.min(1440,s+mins)});setSchedDay(arr,d);
 }
-function schedTimeOf(key){const b=schedDay().find(x=>x.key===key);return b?fmtMin(b.s):null;}
+function schedTimeOf(key,d){const b=schedDay(d).find(x=>x.key===key);return b?fmtMin(b.s):null;}
 const ICON_CLOCK='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>';
 const ICON_CAL='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>';
-/* 홈 위쪽: 오늘 배치한 일정 요약 */
-function schedCard(){
-  const blocks=schedDay(),now=nowMinutes();
-  const card=el("div","plan-card");
-  const head=el("div","plan-head");head.append(el("b",null,"오늘 일정"));
-  const op=el("button","ghost-btn","스케쥴러 열기");op.type="button";op.addEventListener("click",()=>go("schedule"));
-  head.appendChild(op);card.appendChild(head);
-  const list=el("div","plan-list");
-  blocks.forEach(b=>{
-    const o=itemByKey(b.key),done=keyDone(b.key);
-    const row=el("div","plan-row task"+(done?" done":"")+(!done&&b.e<=now?" past":"")+(!done&&b.s<=now&&now<b.e?" now":""));
-    row.appendChild(el("span","pt",`${fmtMin(b.s)}–${fmtMin(b.e)}`));
-    const nm=el("span","pn");const ic=catIco(o);ic.classList.add("mini");nm.append(ic,b.key.startsWith("quests/")?o.title:o.text);row.appendChild(nm);
-    row.appendChild(el("span","pd",row.classList.contains("now")?"지금":fmtDur(b.e-b.s)));
-    row.addEventListener("click",()=>go("schedule"));
-    list.appendChild(row);
-  });
-  card.appendChild(list);return card;
+/* 주간 띠 (구글 캘린더처럼): 월~일, 고른 날은 동그라미, 일정이 있으면 점 */
+function weekStrip(D,onPick,countOf){
+  const td=today(),strip=el("div","sd-strip");
+  const mon=parse(D);mon.setDate(mon.getDate()-((mon.getDay()+6)%7));
+  for(let i=0;i<7;i++){
+    const x=new Date(mon);x.setDate(mon.getDate()+i);const k=ymd(x),n=countOf?countOf(k):0;
+    const b=el("button","sd-day"+(k===td?" today":"")+(k<td?" past":"")+(x.getDay()===0?" sun":x.getDay()===6?" sat":""));
+    b.type="button";b.setAttribute("aria-pressed",String(k===D));b.dataset.day=k;
+    b.setAttribute("aria-label",`${x.getMonth()+1}월 ${x.getDate()}일 ${DAYS[x.getDay()]}요일`+(n?` · ${n}개`:""));
+    b.append(el("span","sd-w",DAYS[x.getDay()]),el("span","sd-n",String(x.getDate())),el("span","sd-dot"+(n?" on":"")));
+    b.addEventListener("click",()=>onPick(k));strip.appendChild(b);
+  }
+  // 띠를 좌우로 밀면 한 주씩
+  let sx=0,sy=0;
+  strip.addEventListener("touchstart",e=>{sx=e.touches[0].clientX;sy=e.touches[0].clientY;},{passive:true});
+  strip.addEventListener("touchend",e=>{const dx=e.changedTouches[0].clientX-sx,dy=e.changedTouches[0].clientY-sy;
+    if(Math.abs(dx)<50||Math.abs(dx)<Math.abs(dy)*1.5)return;const x=parse(D);x.setDate(x.getDate()+(dx<0?7:-7));onPick(ymd(x));},{passive:true});
+  return strip;
 }
-/* 홈 맨 아래: 스케쥴링 버튼 */
-function schedButton(){
-  const n=schedDay().length,left=todayTasks().filter(x=>!x.done&&!schedTimeOf(x.key)).length;
-  const b=el("button","plan-go");b.type="button";
-  const ic=el("span","pg-ic");ic.innerHTML=ICON_CAL;
-  const tx=el("span","pg-tx");
-  const pend=Cal.on()?Cal.pending():0;
-  tx.append(el("b",null,"스케쥴링"),el("span",null,(n?`오늘 ${n}개 배치됨`+(left?` · 아직 ${left}개 남음`:""):"할 일을 원하는 날짜·시간에 넣어 보세요")+(pend?` · 캘린더 미적용 ${pend}개`:"")));
-  b.append(ic,tx);b.addEventListener("click",()=>go("schedule"));
-  const w=el("div","plan-card");w.appendChild(b);return w;
+/* 날짜 제목 + 달력 열기 (가운데 날짜를 누르면 달력) */
+function dateTitle(D,onPick,id){
+  const dd=parse(D),lb=el("label","sd-label");
+  lb.append(el("span",null,`${dd.getMonth()+1}월 ${dd.getDate()}일 (${DAYS[dd.getDay()]})`),el("span","sd-caret","▾"));
+  const pk=el("input");pk.type="date";pk.id=id;pk.value=D;pk.setAttribute("aria-label","날짜 고르기");
+  pk.addEventListener("change",()=>{if(pk.value)onPick(pk.value);});
+  lb.appendChild(pk);return lb;
 }
+const shiftDay=(D,n)=>{const x=parse(D);x.setDate(x.getDate()+n);return ymd(x);};
+const dayWordOf=D=>{const td=today();if(D===td)return "오늘";if(D===shiftDay(td,1))return "내일";if(D===shiftDay(td,-1))return "어제";const d=parse(D);return `${d.getMonth()+1}/${d.getDate()}`;};
 
 /* 스케쥴러 화면: 구글 캘린더처럼 하루 시간표 */
-let schedPick="",schedScrolled=false,schedDate="";
+let schedScrolled=false,schedDate="",schedOpenDay="";
 const HOUR_PX=56,MIN_PX=HOUR_PX/60;
+function setSchedDate(d){if(d===schedDate)return;schedDate=d;render();}
 function screenSchedule(v){
   const R=S.routine||DEFAULT_ROUTINE;
   const td=today();if(!schedDate)schedDate=td;
-  const D=schedDate,isToday=D===td,dd=parse(D),past=D<td;
+  const D=schedDate,isToday=D===td,past=D<td;
   setTitle("스케쥴링");
-  v.appendChild(schedDateNav(D));
   const blocks=schedDay(D),placed=new Set(blocks.map(b=>b.key));
   const tasks=tasksFor(D),tray=past?[]:tasks.filter(x=>!x.done&&!placed.has(x.key));
-  if(schedPick&&!tray.some(x=>x.key===schedPick))schedPick="";
-  const dayWord=isToday?"오늘":`${dd.getMonth()+1}/${dd.getDate()}`;
 
-  const sec=el("div","sec");sec.append(el("h3",null,past?"지난 날의 시간표":"아직 시간을 정하지 않은 할 일"),el("span",null,tray.length?`${tray.length}개`:""));v.appendChild(sec);
-  const tr=el("div","sch-tray");
-  if(past)tr.appendChild(el("span","hint","지난 날은 기록으로 볼 수 있어요. 넣어 둔 일정을 눌러 고치거나 뺄 수도 있어요."));
-  else if(!tray.length)tr.appendChild(el("span","hint",tasks.length?`${dayWord} 할 일을 모두 시간표에 넣었어요.`:`${dayWord} 할 일이 없어요. 마감일이 이 날인 할 일과 이 요일의 반복 퀘스트가 여기에 나와요.`));
-  tray.forEach(x=>{
-    const c=el("button","sch-chip");c.type="button";c.setAttribute("aria-pressed",String(schedPick===x.key));
-    const ic=catIco(x.o);ic.classList.add("mini");
-    c.append(ic,el("span","sc-t",x.title),el("span","sc-d",fmtDur(durOf(x.o))));
-    c.addEventListener("click",()=>{schedPick=schedPick===x.key?"":x.key;render();});
-    tr.appendChild(c);
-  });
-  v.appendChild(tr);
+  // 위쪽 고정 머리: 날짜 · 주간 띠 · 아직 안 넣은 할 일 한 줄
+  const head=el("div","sch-head");
+  const top=el("div","sd-top");
+  top.appendChild(dateTitle(D,setSchedDate,"sch-date"));
+  if(!isToday){const tb=el("button","sd-today","오늘");tb.type="button";tb.addEventListener("click",()=>setSchedDate(td));top.appendChild(tb);}
+  if(!Cal.on()){const cb=el("button","sd-ic");cb.type="button";cb.innerHTML=ICON_CAL;cb.setAttribute("aria-label","구글 캘린더 연결 설정");cb.title="구글 캘린더 연결";cb.addEventListener("click",()=>go("settings"));top.appendChild(cb);}
+  head.appendChild(top);
+  head.appendChild(weekStrip(D,setSchedDate,k=>schedDay(k).length));
+  if(tray.length){
+    const tr=el("div","sch-tray");
+    tr.appendChild(el("span","st-l",`안 넣은 일 ${tray.length}`));
+    tray.forEach(x=>{
+      const c=el("button","sch-chip");c.type="button";
+      const ic=catIco(x.o);ic.classList.add("mini");
+      c.append(ic,el("span","sc-t",x.title),el("span","sc-d",fmtDur(durOf(x.o))));
+      c.addEventListener("click",()=>openSheet({mode:"sched-block",key:x.key,day:D,isNew:true}));
+      tr.appendChild(c);
+    });
+    head.appendChild(tr);
+  }
+  v.appendChild(head);
 
-  v.appendChild(calBar());
-  const bar=el("div","sch-pickbar");
-  if(schedPick){
-    const x=tray.find(t=>t.key===schedPick);
-    bar.append(el("span",null,`'${x.title}' 시작할 시간을 시간표에서 눌러 주세요 · ${fmtDur(durOf(x.o))}`));
-    const cx=el("button","ghost-btn","취소");cx.type="button";cx.addEventListener("click",()=>{schedPick="";render();});bar.appendChild(cx);
-  } else bar.appendChild(el("span",null,"할 일을 고르고 시간을 누르거나, 빈 시간을 눌러 넣을 일을 고르세요. 넣은 일정은 끌어서 옮기거나 눌러서 바꿀 수 있어요."));
-  v.appendChild(bar);
-
-  const grid=el("div","sch-grid");grid.style.height=(24*HOUR_PX)+"px";
+  const grid=el("div","sch-grid"+(past?" past":""));grid.style.height=(24*HOUR_PX)+"px";
   for(let h=0;h<24;h++){
     const line=el("div","sch-hour");line.style.top=(h*HOUR_PX)+"px";
     line.appendChild(el("span","sch-hl",h===0?"":String(h).padStart(2,"0")+":00"));grid.appendChild(line);
@@ -1057,6 +1091,7 @@ function screenSchedule(v){
   });
   if(cluster.length)flush();
 
+  let blockPress=false; // 일정을 누르기 시작했으면 바탕 클릭(새 일정)은 무시
   sorted.forEach(b=>{
     const o=itemByKey(b.key),done=keyDone(b.key,D),m=metaOf(o.group,o.sub),L=lay.get(b);
     const blk=el("div","sch-block hue"+m.c+(done?" done":"")+((b.e-b.s)<45?" short":""));
@@ -1064,66 +1099,57 @@ function screenSchedule(v){
     blk.style.left=`calc(${L.lane/L.n*100}% + 2px)`;blk.style.width=`calc(${100/L.n}% - 4px)`;
     const tt=el("span","sb-t",b.key.startsWith("quests/")?o.title:o.text);const tm=el("span","sb-m",`${fmtMin(b.s)}–${fmtMin(b.e)}`);
     blk.append(tt,tm);blk.setAttribute("role","button");blk.tabIndex=0;blk.setAttribute("aria-label",`${tt.textContent} ${tm.textContent}`);
-    let sy=0,dragging=false,ns=b.s;
-    blk.addEventListener("pointerdown",e=>{sy=e.clientY;dragging=false;ns=b.s;blk.setPointerCapture(e.pointerId);});
+    const openIt=()=>openSheet({mode:"sched-block",key:b.key,day:D});
+    // 누르면 수정 창, 꾹 누른 채로 움직이면 옮기기 (구글 캘린더처럼). 그냥 위아래로 밀면 화면만 스크롤돼요.
+    let sx=0,sy=0,timer=0,armed=false,moved=false,ns=b.s;
+    const reset=()=>{clearTimeout(timer);timer=0;armed=false;blk.classList.remove("drag");setTimeout(()=>{blockPress=false;},0);};
+    blk.addEventListener("pointerdown",e=>{
+      if(e.button>0)return;blockPress=true;sx=e.clientX;sy=e.clientY;moved=false;armed=false;ns=b.s;
+      clearTimeout(timer);
+      timer=setTimeout(()=>{timer=0;if(moved)return;armed=true;blk.classList.add("drag");try{blk.setPointerCapture(e.pointerId);}catch(err){}if(navigator.vibrate)try{navigator.vibrate(15);}catch(err){}},420);
+    });
     blk.addEventListener("pointermove",e=>{
-      if(!blk.hasPointerCapture(e.pointerId))return;
-      const dy=e.clientY-sy;if(!dragging&&Math.abs(dy)>6){dragging=true;blk.classList.add("drag");}
-      if(dragging){ns=Math.max(0,Math.min(1440-(b.e-b.s),Math.round((b.s+dy/MIN_PX)/5)*5));blk.style.top=(ns*MIN_PX)+"px";tm.textContent=`${fmtMin(ns)}–${fmtMin(ns+b.e-b.s)}`;}
+      const dx=e.clientX-sx,dy=e.clientY-sy;
+      if(!armed){if(Math.abs(dx)>8||Math.abs(dy)>8){moved=true;clearTimeout(timer);timer=0;}return;}
+      ns=Math.max(0,Math.min(1440-(b.e-b.s),Math.round((b.s+dy/MIN_PX)/5)*5));
+      blk.style.top=(ns*MIN_PX)+"px";tm.textContent=`${fmtMin(ns)}–${fmtMin(ns+b.e-b.s)}`;
     });
-    blk.addEventListener("pointerup",e=>{
-      if(dragging){dragging=false;placeBlock(b.key,ns,b.e-b.s,D);render();}
-      else openSheet({mode:"sched-block",key:b.key,day:D});
+    blk.addEventListener("pointerup",()=>{
+      if(armed){const was=ns;reset();if(was!==b.s){placeBlock(b.key,was,b.e-b.s,D);render();toast(`${fmtMin(was)}로 옮겼어요.`);}else render();return;}
+      const tap=!moved;reset();if(tap)openIt();
     });
-    blk.addEventListener("keydown",e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();openSheet({mode:"sched-block",key:b.key,day:D});}});
+    blk.addEventListener("pointercancel",()=>{const was=armed;reset();if(was)render();});
+    blk.addEventListener("touchmove",e=>{if(armed&&e.cancelable)e.preventDefault();},{passive:false});
+    blk.addEventListener("contextmenu",e=>e.preventDefault());
+    blk.addEventListener("click",e=>e.stopPropagation());
+    blk.addEventListener("keydown",e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();openIt();}});
     col.appendChild(blk);
   });
 
   col.addEventListener("click",e=>{
-    if(e.target.closest(".sch-block"))return;
+    if(e.target.closest(".sch-block")||blockPress)return;
+    if(past){toast("지난 날에는 새 일정을 넣을 수 없어요.");return;}
     const r=col.getBoundingClientRect();const m=Math.max(0,Math.min(1435,Math.floor((e.clientY-r.top)/MIN_PX/15)*15));
-    if(past)return;
-    if(schedPick){const x=tray.find(t=>t.key===schedPick);placeBlock(schedPick,m,durOf(x.o),D);schedPick="";render();toast(`${fmtMin(m)}에 넣었어요.`);}
-    else openSheet({mode:"sched-pick",at:m,day:D});
+    openSheet({mode:"sched-pick",at:m,day:D});
   });
+  // 시간표를 좌우로 밀면 하루씩
+  let gx=0,gy=0;
+  grid.addEventListener("touchstart",e=>{gx=e.touches[0].clientX;gy=e.touches[0].clientY;},{passive:true});
+  grid.addEventListener("touchend",e=>{if(grid.querySelector(".sch-block.drag"))return;const dx=e.changedTouches[0].clientX-gx,dy=e.changedTouches[0].clientY-gy;
+    if(Math.abs(dx)<70||Math.abs(dx)<Math.abs(dy)*1.8)return;setSchedDate(shiftDay(D,dx<0?1:-1));},{passive:true});
   v.appendChild(grid);
+  // 처음 들어올 때만 지금 시각으로 내려가요 (날짜를 바꿔도 보던 위치 그대로)
   if(!schedScrolled){schedScrolled=true;
     const first=blocks.length?Math.min(...blocks.map(b=>b.s)):null;
     const at=isToday?now-90:(first!=null?first-60:toMin(R.wake)-30);
-    setTimeout(()=>{const y=grid.getBoundingClientRect().top+window.scrollY+Math.max(0,at)*MIN_PX-140;window.scrollTo(0,Math.max(0,y));},0);}
-}
-/* 날짜 고르기: 주간 띠 + 달력 */
-function setSchedDate(d){if(d===schedDate)return;schedDate=d;schedPick="";schedScrolled=false;render();}
-function schedDateNav(D){
-  const td=today(),dd=parse(D);
-  const w=el("div","sch-date");
-  const top=el("div","sd-top");
-  const mv=n=>{const x=parse(D);x.setDate(x.getDate()+n);return ymd(x);};
-  const pv=el("button","sd-arrow","‹");pv.type="button";pv.setAttribute("aria-label","지난주");pv.addEventListener("click",()=>setSchedDate(mv(-7)));
-  const nx=el("button","sd-arrow","›");nx.type="button";nx.setAttribute("aria-label","다음 주");nx.addEventListener("click",()=>setSchedDate(mv(7)));
-  const lb=el("label","sd-label");lb.appendChild(el("span",null,`${dd.getFullYear()}년 ${dd.getMonth()+1}월 ${dd.getDate()}일 (${DAYS[dd.getDay()]})`));
-  const pk=el("input");pk.type="date";pk.id="sch-date";pk.value=D;pk.setAttribute("aria-label","날짜 고르기");
-  pk.addEventListener("change",()=>{if(pk.value)setSchedDate(pk.value);});
-  lb.appendChild(pk);
-  top.append(pv,lb,nx);
-  if(D!==td){const tb=el("button","ghost-btn","오늘");tb.type="button";tb.addEventListener("click",()=>setSchedDate(td));top.appendChild(tb);}
-  w.appendChild(top);
-  const strip=el("div","sd-strip");
-  const mon=parse(D);mon.setDate(mon.getDate()-((mon.getDay()+6)%7));
-  for(let i=0;i<7;i++){
-    const x=new Date(mon);x.setDate(mon.getDate()+i);const k=ymd(x),n=schedDay(k).length;
-    const b=el("button","sd-day"+(k===td?" today":"")+(k<td?" past":""));b.type="button";b.setAttribute("aria-pressed",String(k===D));b.dataset.day=k;
-    b.append(el("span","sd-w",DAYS[x.getDay()]),el("span","sd-n",String(x.getDate())),el("span","sd-c",n?`${n}개`:""));
-    b.addEventListener("click",()=>setSchedDate(k));strip.appendChild(b);
-  }
-  w.appendChild(strip);return w;
+    setTimeout(()=>{const y=grid.getBoundingClientRect().top+window.scrollY+Math.max(0,at)*MIN_PX-200;window.scrollTo(0,Math.max(0,y));},0);}
 }
 function schedPickSheet(sh,o){
-  const D=o.day||schedDate||today(),dd=parse(D),dw=D===today()?"오늘":`${dd.getMonth()+1}/${dd.getDate()}`;
+  const D=o.day||schedDate||today(),dw=dayWordOf(D);
   sh.appendChild(el("h3",null,`${dw} ${fmtMin(o.at)}에 넣을 할 일`));
   const placed=new Map(schedDay(D).map(b=>[b.key,b]));
   const tasks=tasksFor(D).filter(x=>!x.done);
-  if(!tasks.length){sh.appendChild(el("div","empty",`${dw} 할 일이 없어요.`));return;}
+  if(!tasks.length){sh.appendChild(el("div","empty",`${dw} 할 일이 없어요. 마감일이 이 날인 할 일과 이 요일의 반복 퀘스트를 넣을 수 있어요.`));return;}
   const list=el("div","pick-list");
   tasks.sort((a,b)=>(placed.has(a.key)?1:0)-(placed.has(b.key)?1:0)).forEach(x=>{
     const b=el("button","pick-row");b.type="button";const ic=catIco(x.o);ic.classList.add("mini");
@@ -1134,18 +1160,35 @@ function schedPickSheet(sh,o){
   });
   sh.appendChild(list);
 }
+/* 빈 자리 찾기: 원하는 시각부터 겹치지 않는 첫 칸 */
+function freeSlot(D,from,mins,skip){
+  const bl=schedDay(D).filter(b=>b.key!==skip).sort((a,b)=>a.s-b.s);let s=from;
+  for(let i=0;i<50;i++){const hit=bl.find(b=>b.s<s+mins&&s<b.e);if(!hit)break;s=hit.e;}
+  return Math.min(1440-Math.min(mins,1440),s);
+}
 function schedBlockSheet(sh,o){
-  const D=o.day||schedDate||today();
-  const b=schedDay(D).find(x=>x.key===o.key),it=itemByKey(o.key);if(!b||!it){closeSheet();return;}
+  const D=o.day||schedDate||today(),it=itemByKey(o.key);
+  const b=schedDay(D).find(x=>x.key===o.key);
+  if(!it||(!b&&!o.isNew)){closeSheet();return;}
+  const R=S.routine||DEFAULT_ROUTINE;
+  let s0,len;
+  if(b){s0=b.s;len=b.e-b.s;}
+  else{len=durOf(it);const base=D===today()?Math.max(toMin(R.wake),Math.ceil((nowMinutes()+5)/30)*30):toMin(R.wake);s0=freeSlot(D,base,len,o.key);}
   sh.appendChild(el("h3",null,o.key.startsWith("quests/")?it.title:it.text));
-  const st=el("input");st.type="time";st.step="300";st.id="sb-start";st.value=fmtMin(b.s);
-  const mi=el("input");mi.type="number";mi.min="5";mi.max="720";mi.inputMode="numeric";mi.id="sb-min";mi.value=String(b.e-b.s);
-  const two=el("div","two");two.append(field("시작",st),field("소요 시간 (분)",mi));sh.appendChild(two);
+  const dt=el("input");dt.type="date";dt.id="sb-date";dt.value=D;
+  const st=el("input");st.type="time";st.step="300";st.id="sb-start";st.value=fmtMin(s0);
+  const mi=el("input");mi.type="number";mi.min="5";mi.max="720";mi.inputMode="numeric";mi.id="sb-min";mi.value=String(len);
+  const three=el("div","three");three.append(field("날짜",dt),field("시작",st),field("소요 (분)",mi));sh.appendChild(three);
   const q=el("div","quick");[15,30,45,60,90,120].forEach(n=>{const x=el("button",null,fmtDur(n));x.type="button";x.addEventListener("click",()=>mi.value=String(n));q.appendChild(x);});sh.appendChild(q);
-  const br=el("div","btnrow");const sv=el("button","btn","저장");sv.type="submit";
-  const rm=el("button","btn soft","시간표에서 빼기");rm.type="button";rm.addEventListener("click",()=>{setSchedDay(schedDay(D).filter(x=>x.key!==o.key),D);closeSheet();render();toast("시간표에서 뺐어요.");});
-  br.append(sv,rm);sh.appendChild(br);
-  sh.addEventListener("submit",e=>{e.preventDefault();const m=parseInt(mi.value,10);if(!st.value||!(m>0)){mi.focus();return;}placeBlock(o.key,toMin(st.value),m,D);closeSheet();render();toast("저장했어요.");});
+  const br=el("div","btnrow");const sv=el("button","btn",b?"저장":"시간표에 넣기");sv.type="submit";br.appendChild(sv);
+  if(b){const rm=el("button","btn soft","시간표에서 빼기");rm.type="button";rm.addEventListener("click",()=>{setSchedDay(schedDay(D).filter(x=>x.key!==o.key),D);closeSheet();render();toast("시간표에서 뺐어요.");});br.appendChild(rm);}
+  sh.appendChild(br);
+  sh.addEventListener("submit",e=>{e.preventDefault();const m=parseInt(mi.value,10);const nd=dt.value||D;
+    if(!st.value||!(m>0)){mi.focus();return;}
+    if(nd!==D&&b)setSchedDay(schedDay(D).filter(x=>x.key!==o.key),D);
+    placeBlock(o.key,toMin(st.value),m,nd);closeSheet();
+    if(nd!==D&&route()==="schedule")schedDate=nd;
+    render();toast(nd!==D?`${dayWordOf(nd)} ${st.value}로 옮겼어요.`:b?"저장했어요.":`${st.value}에 넣었어요.`);});
 }
 
 /* ================= shared row builders ================= */
@@ -1170,7 +1213,7 @@ function taskRow(it,opts={}){
   const main=el("button","row-main"); main.type="button";
   main.appendChild(el("span","row-text",it.text));
   const m=tagsFor(it,opts); const dt=dueTag(it); if(dt) m.prepend(dt);
-  const pt=!it.done&&schedTimeOf("items/"+it.id); if(pt) m.prepend(el("span","tag time",pt));
+  const pt=!it.done&&schedTimeOf("items/"+it.id,opts.day); if(pt) m.prepend(el("span","tag time",pt));
   if(it.prio==3&&!it.done) m.prepend(el("span","tag late","중요"));
   if(m.childNodes.length) main.appendChild(m);
   main.addEventListener("click",()=>openSheet({mode:"edit-task",id:it.id}));
@@ -1182,24 +1225,26 @@ function taskRow(it,opts={}){
   return c;
 }
 function questRow(q,opts={}){
-  const t=today(), on=!!q.log[t];
+  const t=opts.day||today(), isT=t===today(), on=!!q.log[t];
   const c=el("div","row-card"+(on?" done":"")+(!on&&q.prio==3?" p3":"")+" hue"+metaOf(q.group,q.sub).c);
   const main=el("button","row-main"); main.type="button";
   main.appendChild(el("span","row-text",q.title));
   if(q.read){
     const r=q.read,ri=readToday(q),U=unitOf(q);
     const a=el("span","row-amount");
-    a.append(el("b",null,`${r.cur} / ${r.total}${U.u}`)," ",el("span",null,on?`· 오늘 ${r.cur-ri.base}${U.u} ${U.did}`:`· 오늘 ${ri.target}${U.u}까지 (${ri.target-ri.base}${U.u})`));
+    const hh=r.hist&&r.hist[t];
+    a.append(el("b",null,`${r.cur} / ${r.total}${U.u}`)," ",el("span",null,!isT?(hh?`· ${hh.to-hh.from}${U.u} ${U.did}`:""):on?`· 오늘 ${r.cur-ri.base}${U.u} ${U.did}`:`· 오늘 ${ri.target}${U.u}까지 (${ri.target-ri.base}${U.u})`));
     main.appendChild(a);
     const bar=el("div","bar2 read-bar"),sp=el("span");sp.style.width=(r.cur/r.total*100)+"%";bar.appendChild(sp);main.appendChild(bar);
   }
-  if(q.plan){const ch=chunk(q,t);const a=el("span","row-amount");a.append("오늘 ",el("b",null,`${ch.amt}${q.plan.unit}`)," ",el("span",null,`(${ch.from}~${ch.to} · ${ch.idx+1}/${q.plan.sessions}회)`));main.appendChild(a);}
-  const m=tagsFor(q,opts); m.prepend(el("span","tag quest",q.read?"분량 목표":"↻ 오늘 퀘스트"));
+  if(q.plan){const ch=chunk(q,t);const a=el("span","row-amount");a.append(isT?"오늘 ":"",el("b",null,`${ch.amt}${q.plan.unit}`)," ",el("span",null,`(${ch.from}~${ch.to} · ${ch.idx+1}/${q.plan.sessions}회)`));main.appendChild(a);}
+  const m=tagsFor(q,opts); m.prepend(el("span","tag quest",q.read?"분량 목표":isT?"↻ 오늘 퀘스트":"↻ 반복 퀘스트"));
   if(q.read&&readToday(q).overdue) m.prepend(el("span","tag late","기한 지남"));
-  const qpt=!on&&schedTimeOf("quests/"+q.id); if(qpt) m.prepend(el("span","tag time",qpt));
+  const qpt=!on&&schedTimeOf("quests/"+q.id,t); if(qpt) m.prepend(el("span","tag time",qpt));
   main.appendChild(m);
   main.addEventListener("click",()=>openSheet({mode:q.read?"log":"edit-quest",id:q.id}));
-  c.append(catIco(q),main,checkBtn(on,true,q.title+" 오늘 완료",()=>{
+  c.append(catIco(q),main,checkBtn(on,true,q.title+(isT?" 오늘 완료":" 완료"),()=>{
+    if(!isT){toast(t>today()?"그 날이 되면 체크할 수 있어요.":"지난 날의 기록은 바꿀 수 없어요.");return;}
     if(q.read){openSheet({mode:"log",id:q.id});return;}
     if(on) delete q.log[t]; else {q.log[t]=true; if(q.mission) xpToast(q.mission,15);}
     save(); render();
@@ -1286,7 +1331,9 @@ function screenHome(v){
   v.appendChild(tiles);
 
   const t=today();
-  const TABS=[["today","오늘"],["all","전체"],["mission","메인 미션"]];
+  if(!homeDay)homeDay=t;
+  const HD=homeDay,otherDay=homeTab==="today"&&HD!==t;
+  const TABS=[["today",HD===t?"오늘":dayWordOf(HD)],["all","전체"],["mission","메인 미션"]];
   const quests=S.quests.filter(isTodayQuest).map(q=>({...q,_quest:true,_ref:q}));
   const pick={
     today:o=>o._quest||(o.due&&o.due<=t),
@@ -1295,10 +1342,15 @@ function screenHome(v){
   }[homeTab];
   const open=S.items.filter(i=>!i.done);
   const doneToday=S.items.filter(i=>i.done&&i.doneAt===t);
-  const list=sortTasks([...quests.filter(q=>!q._ref.log[t]),...open]).filter(pick);
-  const finished=[...quests.filter(q=>q._ref.log[t]),...doneToday].filter(homeTab==="today"?()=>true:pick);
-  const todaySched=homeTab==="today"?schedDay():[];
-  if(todaySched.length){const at=o=>{const b=todaySched.find(x=>x.key===(o._quest?"quests/"+o._ref.id:"items/"+o.id));return b?b.s:1e9;};list.sort((a,b)=>at(a)-at(b));}
+  let list=sortTasks([...quests.filter(q=>!q._ref.log[t]),...open]).filter(pick);
+  let finished=[...quests.filter(q=>q._ref.log[t]),...doneToday].filter(homeTab==="today"?()=>true:pick);
+  if(otherDay){ // 다른 날: 그 요일의 반복 퀘스트 + 마감일이 그 날인 할 일
+    const tk=tasksFor(HD).map(x=>x.key.startsWith("quests/")?{...x.o,_quest:true,_ref:x.o,_done:x.done}:Object.assign(x.o,{}));
+    const dn=o=>o._quest?o._done:!!o.done;
+    list=tk.filter(o=>!dn(o));finished=tk.filter(dn);
+  }
+  const daySched=homeTab==="today"?schedDay(HD):[];
+  if(daySched.length){const at=o=>{const b=daySched.find(x=>x.key===(o._quest?"quests/"+o._ref.id:"items/"+o.id));return b?b.s:1e9;};list.sort((a,b)=>at(a)-at(b));}
   const total=list.length+finished.length;
 
   const sec=el("div","sec");sec.append(el("h3",null,"할 일"),el("span",null,total?`완료 ${finished.length} · 남은 일 ${list.length}`:""));
@@ -1306,7 +1358,20 @@ function screenHome(v){
   const tabs=seg("tabs",TABS,homeTab,k=>{homeTab=k;homeLimit=8;try{localStorage.setItem("checklist-hometab",k);}catch(e){}render();});
   v.appendChild(tabs);
 
-  if(todaySched.length) v.appendChild(schedCard());
+  let dayBar=null;
+  if(homeTab==="today"){
+    // 날짜 고르기 + 시간표로 가기 (한 줄 + 주간 띠)
+    dayBar=el("div","day-bar");
+    const top=el("div","sd-top");
+    const pickDay=k=>{homeDay=k;homeLimit=8;render();};
+    top.appendChild(dateTitle(HD,pickDay,"home-date"));
+    if(HD!==t){const tb=el("button","sd-today","오늘");tb.type="button";tb.addEventListener("click",()=>pickDay(t));top.appendChild(tb);}
+    const sb=el("button","sd-sched");sb.type="button";const si=el("span");si.innerHTML=ICON_CLOCK;
+    sb.append(si,daySched.length?`시간표 ${daySched.length}`:"시간표");sb.setAttribute("aria-label","시간표 열기");
+    sb.addEventListener("click",()=>{schedOpenDay=HD;go("schedule");});top.appendChild(sb);
+    dayBar.append(top,weekStrip(HD,pickDay,k=>k===t?todayTasks().filter(x=>!x.done).length:tasksFor(k).filter(x=>!x.done).length));
+    v.appendChild(dayBar);
+  }
   const area=el("div","rows");
   if(homeTab==="mission"){
     if(!S.missions.length){
@@ -1322,28 +1387,29 @@ function screenHome(v){
   }
   if(!total&&!(homeTab==="mission"&&!S.missions.length)){
     let msg="할 일이 없어요. 오른쪽 아래 + 버튼으로 추가해 보세요.";
-    if(homeTab==="today"){
+    if(otherDay) msg=`${dayWordOf(HD)} 할 일이 없어요. 마감일이 이 날인 할 일과 이 요일의 반복 퀘스트가 여기에 나와요.`;
+    else if(homeTab==="today"){
       const upcoming=open.filter(i=>!i.due||i.due>t).length;
       msg=upcoming?`오늘 할 일이 없어요. 남은 할 일 ${upcoming}개는 '전체'에서 볼 수 있어요.`:"오늘 할 일이 없어요. + 버튼으로 추가할 때 마감일을 '오늘'로 정하면 여기에 나와요.";
     } else if(homeTab==="mission") msg="메인 미션에 연결된 할 일이 없어요. 할 일을 누르면 미션을 연결할 수 있어요.";
     area.appendChild(el("div","empty",msg));
   }
-  list.slice(0,homeLimit).forEach(o=>area.appendChild(o._quest?questRow(o._ref,{showMission:homeTab!=="mission"||!homeMission}):taskRow(o,{showPrio:true,showMission:homeTab!=="mission"||!homeMission})));
+  const rd=homeTab==="today"?HD:undefined;
+  list.slice(0,homeLimit).forEach(o=>area.appendChild(o._quest?questRow(o._ref,{showMission:homeTab!=="mission"||!homeMission,day:rd}):taskRow(o,{showPrio:true,showMission:homeTab!=="mission"||!homeMission,day:rd})));
   v.appendChild(area);
   if(list.length>homeLimit){
     const more=el("button","more",`더보기 (${list.length-homeLimit}개 더)`);more.type="button";
     more.addEventListener("click",()=>{homeLimit+=8;render();});
     v.appendChild(more);
   }
-  if(homeTab==="today"&&total){
+  if(homeTab==="today"&&!otherDay&&total){
     const later=open.filter(i=>!i.due||i.due>t).length;
     if(later){const h=el("button","more",`오늘 이후 할 일 ${later}개 보기 →`);h.type="button";h.addEventListener("click",()=>{homeTab="all";homeLimit=8;render();});v.appendChild(h);}
   }
   if(finished.length){
-    const d=el("details","done-box");d.appendChild(el("summary",null,`오늘 끝낸 일 ${finished.length}개`));
-    const r=el("div","rows");finished.forEach(o=>r.appendChild(o._quest?questRow(o._ref):taskRow(o)));d.appendChild(r);v.appendChild(d);
+    const d=el("details","done-box");d.appendChild(el("summary",null,`${otherDay?dayWordOf(HD):"오늘"} 끝낸 일 ${finished.length}개`));
+    const r=el("div","rows");finished.forEach(o=>r.appendChild(o._quest?questRow(o._ref,{day:rd}):taskRow(o,{day:rd})));d.appendChild(r);v.appendChild(d);
   }
-  if(homeTab==="today") v.appendChild(schedButton());
 
   // 좌우로 밀어서 탭 넘기기
   let sx=0,sy=0,tracking=false;
@@ -1556,6 +1622,7 @@ function screenSettings(v){
   v.appendChild(p);
 
   const syp=el("div","panel");renderSyncPanel(syp);v.appendChild(syp);
+  const cp=el("div","panel");cp.appendChild(el("h3",null,"구글 캘린더"));cp.appendChild(calBar());v.appendChild(cp);
 
   const rp=el("div","panel");rp.appendChild(el("h3",null,"생활 시간"));
   rp.appendChild(el("span","hint","스케쥴러 시간표에 회색으로 표시돼요."));
@@ -1663,10 +1730,10 @@ function render(){
   else if(r==="schedule"){screenSchedule(v);}
   else if(r==="settings"){setTitle("설정");screenSettings(v);}
   else {go("home",true);return render();}
-  window.scrollTo(0,y);
+  window.scrollTo(0,y);paintCalPop();
 }
 let lastRoute=route();
-window.addEventListener("hashchange",()=>{closeSheet();const r=route();if(r!==lastRoute){if(r==="schedule"){schedScrolled=false;schedDate=today();schedPick="";}lastRoute=r;if(r==="home")homeLimit=8;render();window.scrollTo(0,0);}});
+window.addEventListener("hashchange",()=>{closeSheet();const r=route();if(r!==lastRoute){if(r==="schedule"){schedScrolled=false;schedDate=schedOpenDay||today();schedOpenDay="";}lastRoute=r;if(r==="home")homeLimit=8;render();window.scrollTo(0,0);}});
 $("backBtn").addEventListener("click",()=>{if(history.length>1)history.back();else go("home");});
 $("settingsBtn").addEventListener("click",()=>go("settings"));
 $("syncBtn").addEventListener("click",()=>go("settings"));
@@ -2141,8 +2208,9 @@ try{if(localStorage.getItem("checklist-mig-series")!=="1"){if(!S.subs.input.incl
 lastSeen=seenMap(); render(); if(!loadFailed){takeSnapshot();snapTaken=true;}
 setTimeout(()=>{if(!loadFailed)Sync.init();else Sync.set("error","저장된 데이터를 먼저 복원해 주세요.");},300);
 let lastDay=today();
-setInterval(()=>{if(today()!==lastDay){lastDay=today();render();}},60000);
-document.addEventListener("visibilitychange",()=>{if(!document.hidden){if(today()!==lastDay){lastDay=today();render();}}});
+const dayRoll=()=>{if(today()!==lastDay){if(homeDay===lastDay)homeDay="";lastDay=today();render();}};
+setInterval(dayRoll,60000);
+document.addEventListener("visibilitychange",()=>{if(!document.hidden)dayRoll();});
 /* 업데이트: 앱을 다시 켜거나 다시 볼 때마다 새 버전을 확인하고, 있으면 바로 바꿔요 */
 let swReg=null;
 if("serviceWorker" in navigator){
