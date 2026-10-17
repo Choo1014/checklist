@@ -262,6 +262,7 @@ details.done-box .rows{margin-top:8px}
 .page-in{display:flex;align-items:center;gap:8px}
 .page-in input{font-size:1.4rem;font-weight:600;text-align:center;max-width:140px}
 .page-in span{color:var(--muted)}
+.page-in.hm input{max-width:84px}
 .dates{display:grid;grid-template-columns:1fr auto 1fr;gap:6px;align-items:center}
 .dates span{color:var(--muted);font-size:.85rem}
 .sync-btn[data-state="synced"]{color:var(--accent)}
@@ -402,7 +403,7 @@ details.done-box .rows{margin-top:8px}
 (function(){
 "use strict";
 /* ================= data ================= */
-const APP_VERSION="v22";
+const APP_VERSION="v23";
 const LS="checklist-v4", OLD=["todo-items-v3","todo-items-v1"];
 const DAYS=["일","월","화","수","목","금","토"], ORDER=[1,2,3,4,5,6,0];
 const GROUPS={input:"인풋",output:"아웃풋",etc:"기타"};
@@ -1918,18 +1919,25 @@ function logSheet(sh,o){
   const q=S.quests.find(x=>x.id===o.id);if(!q||!q.read){closeSheet();return;}
   const r=q.read,U=unitOf(q),ri=readToday(q),isMin=r.unit==="min";
   const per=Math.max(0,ri.target-ri.base);
-  const show=n=>isMin&&n>=60?`${n}분(${Math.floor(n/60)}:${String(n%60).padStart(2,"0")})`:`${n}${U.u}`;
+  const show=n=>isMin?(n>=60?`${Math.floor(n/60)}시간`+(n%60?` ${n%60}분`:""):`${n}분`):`${n}${U.u}`;
   sh.appendChild(el("h3",null,q.title));
   const stat=el("div","read-stat");
   [[`${r.cur}/${r.total}`,"지금까지"],[`${r.total-r.cur}${U.u}`,"남은 분량"],[ri.overdue?"지남":`${ri.left}일`,"남은 날"]].forEach(([b,l])=>{const d=el("div");d.append(el("b",null,b),el("span",null,l));stat.appendChild(d);});
   sh.appendChild(stat);
   sh.appendChild(el("span","hint",r.cur>=r.total&&!ri.logged?"이미 다 끝났어요.":ri.overdue?`목표일이 지났어요. 끝(${show(r.total)})까지를 오늘 목표로 잡았어요.`:`오늘 목표는 ${show(ri.target)}까지예요 (${per}${U.u}`+(r.unit==="ep"&&r.epMin?`, 약 ${fmtDur(per*r.epMin)}`:"")+"). 더 하거나 덜 해도 남은 날에 맞춰 다시 계산해요."));
   const pin=el("div","page-in");const inp=el("input");
-  if(isMin){inp.type="text";inp.inputMode="decimal";inp.placeholder=`예: ${ri.target} 또는 ${Math.floor(ri.target/60)}:${String(ri.target%60).padStart(2,"0")}`;}
-  else{inp.type="number";inp.min="0";inp.max=String(r.total);inp.inputMode="numeric";inp.placeholder=String(ri.target);}
-  inp.id="log-pos";inp.value=ri.logged?String(r.cur):"";inp.setAttribute("aria-label",`지금 몇 ${U.u}까지`);
-  pin.append(inp,el("span",null,`${U.u}까지 / ${r.total}${U.u}`));
-  sh.appendChild(field(`지금 몇 ${U.u}까지 ${U.verb}?`,pin));
+  inp.type="number";inp.min="0";inp.inputMode="numeric";inp.id="log-pos";
+  // 영상은 '시간'과 '분' 칸을 따로 둬요
+  const inH=el("input");inH.type="number";inH.min="0";inH.inputMode="numeric";inH.id="log-h";inH.setAttribute("aria-label","시간");
+  if(isMin){
+    inp.max="59";inp.setAttribute("aria-label","분");inp.placeholder=String(ri.target%60);inH.placeholder=String(Math.floor(ri.target/60));
+    if(ri.logged){inH.value=String(Math.floor(r.cur/60));inp.value=String(r.cur%60);}
+    pin.classList.add("hm");pin.append(inH,el("span",null,"시간"),inp,el("span",null,"분까지"));
+  } else {
+    inp.max=String(r.total);inp.placeholder=String(ri.target);inp.value=ri.logged?String(r.cur):"";inp.setAttribute("aria-label",`지금 몇 ${U.u}까지`);
+    pin.append(inp,el("span",null,`${U.u}까지 / ${r.total}${U.u}`));
+  }
+  sh.appendChild(field(isMin?"지금 몇 시간 몇 분까지 봤나요?":`지금 몇 ${U.u}까지 ${U.verb}?`,pin));
   const g=el("div","gauge "+"hue"+metaOf(q.group,q.sub).c);
   const gDone=el("span","g-done"),gToday=el("span","g-today"),gMark=el("span","g-mark");
   g.append(gDone,gToday,gMark);sh.appendChild(g);
@@ -1937,13 +1945,12 @@ function logSheet(sh,o){
   const pct=x=>Math.max(0,Math.min(100,x/r.total*100))+"%";
   gMark.style.left=pct(ri.target);
   // "85", "1:25", "1시간 25분" 모두 받아요 (영상은 분)
-  function parsePos(raw){
-    raw=String(raw).trim();if(raw==="")return null;
-    if(isMin){const hm=raw.match(/^(\d+)\s*[:시]\s*(\d{1,2})/);if(hm)return +hm[1]*60+ +hm[2];const h=raw.match(/^(\d+)\s*시간\s*(\d+)?/);if(h)return +h[1]*60+(+h[2]||0);}
-    const n=parseInt(raw.replace(/[^\d]/g,""),10);return isNaN(n)?null:n;
+  function parsePos(){
+    if(isMin){const h=inH.value.trim(),m=inp.value.trim();if(h===""&&m==="")return null;return (parseInt(h||"0",10)||0)*60+(parseInt(m||"0",10)||0);}
+    const raw=inp.value.trim();if(raw==="")return null;const n=parseInt(raw,10);return isNaN(n)?null:n;
   }
   function upd(){
-    const p=parsePos(inp.value);
+    const p=parsePos();
     gDone.style.width=pct(Math.min(ri.base,p==null?ri.base:p));
     if(p==null){gToday.style.width="0";g.classList.remove("ok","short");gTxt.classList.remove("err");gTxt.textContent=`오늘 목표 ${show(ri.target)}까지 · 숫자를 넣으면 미리 보여 드려요`;return;}
     const pos=Math.min(r.total,p),v=pos-ri.base;
@@ -1958,18 +1965,18 @@ function logSheet(sh,o){
     gTxt.textContent=`오늘 ${v}${U.u} · `+(diff>=0?(diff?`목표보다 ${diff}${U.u} 더 했어요`:"목표를 채웠어요"):`목표까지 ${-diff}${U.u} 모자라요`)+
       (nd?` · 남은 ${nd}일 동안 하루 약 ${next}${U.u}`:` · 남은 ${left}${U.u}`)+(nd&&next!==per?(next>per?" (늘어나요)":" (줄어요)"):"");
   }
-  inp.addEventListener("input",upd);upd();
+  inp.addEventListener("input",upd);inH.addEventListener("input",upd);upd();
   const qk=el("div","quick");[[`목표 ${show(ri.target)}`,ri.target],["끝까지",r.total]].forEach(([l,v])=>{const b=el("button",null,l);b.type="button";
-    b.addEventListener("click",()=>{inp.value=String(v);upd();});qk.appendChild(b);});
+    b.addEventListener("click",()=>{if(isMin){inH.value=String(Math.floor(v/60));inp.value=String(v%60);}else inp.value=String(v);upd();});qk.appendChild(b);});
   sh.appendChild(qk);
   const br=el("div","btnrow");const sv=el("button","btn","등록");sv.type="submit";br.appendChild(sv);
   if(ri.logged){const cl=el("button","btn soft","오늘 기록 지우기");cl.type="button";cl.addEventListener("click",()=>{setReadPage(q,ri.base);save();closeSheet();render();toast("오늘 기록을 지웠어요.");});br.appendChild(cl);}
   const ed=el("button","btn soft","계획 수정");ed.type="button";ed.addEventListener("click",()=>openSheet({mode:"edit-quest",id:q.id}));br.appendChild(ed);
   sh.appendChild(br);
-  sh.addEventListener("submit",e=>{e.preventDefault();const p=parsePos(inp.value);if(p==null){inp.focus();return;}
+  sh.addEventListener("submit",e=>{e.preventDefault();const p=parsePos();if(p==null){(isMin?inH:inp).focus();return;}
     const pos=Math.min(r.total,p);setReadPage(q,pos);save();closeSheet();render();
     if(q.read.cur<q.read.total)toast(`${show(pos)}까지 기록했어요.`);});
-  setTimeout(()=>inp.focus(),50);
+  setTimeout(()=>(isMin?inH:inp).focus(),50);
 }
 
 /* ---- 인터넷에서 분량 찾기 (키 없이 쓰는 공개 자료) ---- */
