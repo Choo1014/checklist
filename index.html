@@ -351,6 +351,15 @@ details.done-box .rows{margin-top:8px}
 .day-bar{display:flex;flex-direction:column;gap:4px}
 .sd-sched{background:var(--btn-bg)!important;color:var(--btn-fg)!important;border-color:transparent!important;box-shadow:0 2px 8px color-mix(in srgb,var(--btn-bg) 40%,transparent)}
 .sb-info.bad{color:var(--warn)}
+.tf-rows{display:flex;flex-direction:column;gap:10px}
+.tf-row{display:flex;align-items:center;gap:10px}
+.tf-l{width:28px;flex:none;font-size:.85rem;color:var(--muted)}
+.tf{display:flex;align-items:center;gap:6px;flex:1;min-width:0}
+.tf-ap{display:flex;border:1px solid var(--line);border-radius:10px;overflow:hidden;flex:none}
+.tf-ap button{padding:9px 12px;font-weight:600;color:var(--muted);background:var(--bg)}
+.tf-ap button[aria-pressed="true"]{background:var(--btn-bg);color:var(--btn-fg)}
+.tf select{flex:1;min-width:0;text-align:center;font-size:1.05rem;font-weight:600;font-variant-numeric:tabular-nums}
+.tf-c{font-weight:700;color:var(--muted)}
 .btnrow.col{flex-direction:column}.btnrow.col .btn{width:100%}
 .sd-today,.sd-sched,.sd-ic{display:inline-flex;align-items:center;gap:5px;height:32px;padding:0 12px;border-radius:999px;border:1px solid var(--line);background:var(--card);color:var(--fg);font-size:.82rem;font-weight:600;flex:none}
 .sd-ic{width:32px;padding:0;justify-content:center;color:var(--muted)}
@@ -441,7 +450,7 @@ details.done-box .rows{margin-top:8px}
 (function(){
 "use strict";
 /* ================= data ================= */
-const APP_VERSION="v26";
+const APP_VERSION="v27";
 const LS="checklist-v4", OLD=["todo-items-v3","todo-items-v1"];
 const DAYS=["일","월","화","수","목","금","토"], ORDER=[1,2,3,4,5,6,0];
 const GROUPS={input:"인풋",output:"아웃풋",etc:"기타"};
@@ -1181,6 +1190,29 @@ function freeSlot(D,from,mins,skip){
   for(let i=0;i<50;i++){const hit=bl.find(b=>b.s<s+mins&&s<b.e);if(!hit)break;s=hit.e;}
   return Math.min(1440-Math.min(mins,1440),s);
 }
+/* 시각 고르기: [오전|오후] [시 ▾] : [분 ▾] — 폰 기본 시계 창 대신, 오전·오후가 한눈에 보이게 */
+function timeField(id,val){
+  const inp=el("input");inp.type="hidden";inp.id=id;inp.value=val;
+  const w=el("div","tf");
+  const ap=el("div","tf-ap");const am=el("button",null,"오전"),pm=el("button",null,"오후");
+  [am,pm].forEach(b=>{b.type="button";ap.appendChild(b);});
+  const hs=el("select");hs.id=id+"-h";hs.setAttribute("aria-label","시");
+  for(let h=1;h<=12;h++){const op=el("option",null,String(h));op.value=String(h);hs.appendChild(op);}
+  const ms=el("select");ms.id=id+"-m";ms.setAttribute("aria-label","분");
+  const mopts=()=>{const cur=toMin(inp.value)%60;ms.innerHTML="";const set=new Set();for(let m=0;m<60;m+=5)set.add(m);set.add(cur);[...set].sort((a,b)=>a-b).forEach(m=>{const op=el("option",null,String(m).padStart(2,"0"));op.value=String(m);ms.appendChild(op);});};
+  const paint=()=>{const t=toMin(inp.value),h24=Math.floor(t/60)%24,pmOn=h24>=12;
+    am.setAttribute("aria-pressed",String(!pmOn));pm.setAttribute("aria-pressed",String(pmOn));
+    hs.value=String(h24%12||12);mopts();ms.value=String(t%60);};
+  const commit=pmOn=>{let h=parseInt(hs.value,10)%12;if(pmOn)h+=12;inp.value=fmtMin(h*60+parseInt(ms.value,10));paint();inp.dispatchEvent(new Event("change"));};
+  am.addEventListener("click",()=>commit(false));pm.addEventListener("click",()=>commit(true));
+  hs.addEventListener("change",()=>commit(pm.getAttribute("aria-pressed")==="true"));
+  ms.addEventListener("change",()=>commit(pm.getAttribute("aria-pressed")==="true"));
+  inp._sync=paint;paint();
+  w.append(ap,hs,el("span","tf-c",":"),ms,inp);
+  return {w,inp};
+}
+const setT=(inp,v)=>{inp.value=v;if(inp._sync)inp._sync();};
+const fmtKo=v=>{const t=toMin(v),h=Math.floor(t/60)%24;return `${h<12?"오전":"오후"} ${h%12||12}:${String(t%60).padStart(2,"0")}`;};
 function schedBlockSheet(sh,o){
   const D=o.day||schedDate||today(),it=itemByKey(o.key);
   const b=schedDay(D).find(x=>x.key===o.key);
@@ -1192,28 +1224,30 @@ function schedBlockSheet(sh,o){
   sh.appendChild(el("h3",null,o.key.startsWith("quests/")?it.title:it.text));
   const dt=el("input");dt.type="date";dt.id="sb-date";dt.value=D;
   sh.appendChild(field("날짜",dt));
-  const st=el("input");st.type="time";st.step="300";st.id="sb-start";st.value=fmtMin(s0);
-  const en=el("input");en.type="time";en.step="300";en.id="sb-end";en.value=fmtMin(Math.min(1439,s0+len));
-  const two=el("div","two");two.append(field("시작",st),field("끝",en));sh.appendChild(two);
+  const S1=timeField("sb-start",fmtMin(s0)),E1=timeField("sb-end",fmtMin(Math.min(1440,s0+len)));
+  const st=S1.inp,en=E1.inp;
+  const two=el("div","tf-rows");
+  const row=(lab,w)=>{const r=el("div","tf-row");r.append(el("span","tf-l",lab),w);return r;};
+  two.append(row("시작",S1.w),row("끝",E1.w));sh.appendChild(two);
   const info=el("span","hint sb-info");sh.appendChild(info);
   const endMin=()=>{let e=toMin(en.value);if(en.value==="00:00"||e===0)e=1440;return e;};
   const upd=()=>{const d=endMin()-toMin(st.value);info.textContent=!st.value||!en.value?"":d>0?`${fmtDur(d)} 동안`:"끝 시각이 시작보다 늦어야 해요.";info.classList.toggle("bad",!(d>0));};
   // 시작을 바꾸면 길이는 그대로 두고 끝도 같이 옮겨요 (구글 캘린더처럼)
   let lenNow=len;
-  st.addEventListener("change",()=>{if(!st.value)return;en.value=fmtMin(Math.min(1439,toMin(st.value)+lenNow));upd();});
+  st.addEventListener("change",()=>{if(!st.value)return;setT(en,fmtMin(Math.min(1440,toMin(st.value)+lenNow)));upd();});
   en.addEventListener("change",()=>{const d=endMin()-toMin(st.value);if(d>0)lenNow=d;upd();});
-  const q=el("div","quick");[15,30,45,60,90,120].forEach(n=>{const x=el("button",null,fmtDur(n));x.type="button";x.addEventListener("click",()=>{if(!st.value)return;lenNow=n;en.value=fmtMin(Math.min(1439,toMin(st.value)+n));upd();});q.appendChild(x);});sh.appendChild(q);
+  const q=el("div","quick");[15,30,45,60,90,120].forEach(n=>{const x=el("button",null,fmtDur(n));x.type="button";x.addEventListener("click",()=>{if(!st.value)return;lenNow=n;setT(en,fmtMin(Math.min(1440,toMin(st.value)+n)));upd();});q.appendChild(x);});sh.appendChild(q);
   upd();
   const br=el("div","btnrow");const sv=el("button","btn",b?"저장":"시간표에 넣기");sv.type="submit";br.appendChild(sv);
   if(b){const rm=el("button","btn soft","시간표에서 빼기");rm.type="button";rm.addEventListener("click",()=>{setSchedDay(schedDay(D).filter(x=>x.key!==o.key),D);closeSheet();render();toast("시간표에서 뺐어요.");});br.appendChild(rm);}
   sh.appendChild(br);
   sh.addEventListener("submit",e=>{e.preventDefault();const nd=dt.value||D;
     const m=endMin()-toMin(st.value);
-    if(!st.value||!en.value||!(m>0)){upd();en.focus();return;}
+    if(!st.value||!en.value||!(m>0)){upd();return;}
     if(nd!==D&&b)setSchedDay(schedDay(D).filter(x=>x.key!==o.key),D);
     placeBlock(o.key,toMin(st.value),m,nd);closeSheet();
     if(nd!==D&&route()==="schedule")schedDate=nd;
-    render();toast(nd!==D?`${dayWordOf(nd)} ${st.value}로 옮겼어요.`:b?"저장했어요.":`${st.value}에 넣었어요.`);});
+    render();toast(nd!==D?`${dayWordOf(nd)} ${fmtKo(st.value)}로 옮겼어요.`:b?"저장했어요.":`${fmtKo(st.value)}에 넣었어요.`);});
 }
 
 /* ================= shared row builders ================= */
