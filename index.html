@@ -419,6 +419,8 @@ details.done-box .rows{margin-top:8px}
 .cal-bar .btn{padding:8px 14px}
 .cal-bar{flex-wrap:wrap}
 .cal-more{flex:1 1 100%;font-size:.85rem}
+.cal-remind{flex:1 1 100%;display:flex;align-items:center;gap:10px;font-size:.9rem}
+.cal-remind select{flex:1}
 .cal-more summary{cursor:pointer;color:var(--muted);padding:2px 0}
 .cal-more .hint{display:block;margin:6px 0}
 .toggle{display:flex;align-items:center;gap:8px;font-size:.92rem;cursor:pointer}
@@ -450,7 +452,7 @@ details.done-box .rows{margin-top:8px}
 (function(){
 "use strict";
 /* ================= data ================= */
-const APP_VERSION="v27";
+const APP_VERSION="v28";
 const LS="checklist-v4", OLD=["todo-items-v3","todo-items-v1"];
 const DAYS=["일","월","화","수","목","금","토"], ORDER=[1,2,3,4,5,6,0];
 const GROUPS={input:"인풋",output:"아웃풋",etc:"기타"};
@@ -865,6 +867,8 @@ const Cal={
   setOn(v){try{localStorage.setItem("checklist-cal",v?"1":"0");}catch(e){}},
   calId(){try{return localStorage.getItem("checklist-calid")||"";}catch(e){return "";}},
   setCalId(v){try{if(v)localStorage.setItem("checklist-calid",v);else localStorage.removeItem("checklist-calid");}catch(e){}},
+  remind(){try{const v=parseInt(localStorage.getItem("checklist-cal-remind"),10);return isNaN(v)?10:v;}catch(e){return 10;}},
+  setRemind(v){try{localStorage.setItem("checklist-cal-remind",String(v));}catch(e){}},
   valid(){return !!this.token&&Date.now()<this.exp-60000;},
   q(){try{return JSON.parse(localStorage.getItem("checklist-cal-q")||"{}");}catch(e){return {};}},
   setQ(x){try{localStorage.setItem("checklist-cal-q",JSON.stringify(x));}catch(e){}},
@@ -934,7 +938,7 @@ const Cal={
         } else {
           const body={summary:(key.startsWith("quests/")?it.title:it.text),description:"체크리스트 스케쥴러에서 넣은 일정",
             start:{dateTime:this.dt(day,b.s),timeZone:tz},end:{dateTime:this.dt(day,b.e),timeZone:tz},
-            reminders:{useDefault:false,overrides:[{method:"popup",minutes:0}]},status:"confirmed"};
+            reminders:{useDefault:false,overrides:[{method:"popup",minutes:this.remind()}]},status:"confirmed"};
           // 전용 캘린더가 있으면 그 캘린더 색(예: 유칼립투스)을 그대로 쓰고, 기본 캘린더면 가장 가까운 '세이지'로
           if(!this.calId())body.colorId="2";
           let r=await this.api("PUT","/"+id,body);
@@ -965,7 +969,7 @@ function fillCalBar(w){
   const tx=el("div","cal-tx");
   let btn=null;
   if(!Cal.on()){
-    tx.append(el("b",null,"구글 캘린더에 등록"),el("span",null,"배치한 일정을 '적용'할 때 캘린더에도 만들어서, 시작 시각에 캘린더 앱이 알려 줘요."));
+    tx.append(el("b",null,"구글 캘린더에 등록"),el("span",null,"배치한 일정을 '적용'할 때 캘린더에도 만들어서, 일정 10분 전(설정에서 변경 가능)에 캘린더 앱이 알려 줘요."));
     btn=el("button","btn soft","연결");btn.addEventListener("click",()=>Cal.connect());
   } else if(Cal.busy){
     tx.append(el("b",null,"캘린더에 반영하는 중…"));
@@ -980,6 +984,13 @@ function fillCalBar(w){
   }
   w.appendChild(tx);if(btn){btn.type="button";w.appendChild(btn);}
   if(Cal.on()){
+    // 알림 시점: 바꾸면 앞으로의 일정에 모두 다시 반영
+    const rr=el("div","cal-remind");rr.appendChild(el("span",null,"알림"));
+    const sel=el("select");sel.id="cal-remind";sel.setAttribute("aria-label","일정 알림 시점");
+    [[0,"시작할 때"],[5,"5분 전"],[10,"10분 전"],[15,"15분 전"],[30,"30분 전"],[60,"1시간 전"]].forEach(([m,t])=>{const op=el("option",null,t);op.value=String(m);sel.appendChild(op);});
+    sel.value=String(Cal.remind());
+    sel.addEventListener("change",()=>{Cal.setRemind(parseInt(sel.value,10));Cal.setQ(queueAllUpcoming(Cal.q()));toast("알림 시점을 바꿨어요. 앞으로의 일정에 반영할게요.");Cal.apply();});
+    rr.appendChild(sel);w.appendChild(rr);
     const d=el("details","cal-more");d.appendChild(el("summary",null,"캘린더 설정 (보낼 캘린더 바꾸기 · 연동 끄기)"));
     const i=el("input");i.type="text";i.id="cal-id";i.placeholder="비우면 기본 캘린더 · 예: abc123@group.calendar.google.com";i.value=Cal.calId();
     const sv=el("button","btn soft","저장");sv.type="button";
