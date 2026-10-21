@@ -130,6 +130,21 @@ main{max-width:560px;margin:0 auto;padding-inline:16px;padding-block:4px calc(en
 .btnrow .btn{flex:1 1 120px}
 
 /* group screen */
+.dust-card{display:flex;flex-direction:column;padding:0;border-radius:16px;overflow:hidden;background:var(--card);border:1px solid var(--line);text-align:left;color:var(--fg)}
+.dust-cv{display:block;width:100%;height:96px;background:linear-gradient(to bottom,transparent,color-mix(in srgb,var(--muted) 7%,transparent))}
+.dust-cv.big{height:200px}
+.dust-tx{display:flex;align-items:center;gap:8px;padding:10px 14px;border-top:1px solid var(--line)}
+.dust-tx b{font-size:.95rem}.dust-tx span{font-size:.8rem;color:var(--muted);flex:1}
+.dust-tx .chev{flex:none;font-size:1.2rem}
+.dust-jar{border-radius:20px;overflow:hidden;background:var(--card);border:1px solid var(--line);box-shadow:inset 0 0 0 4px color-mix(in srgb,var(--line) 50%,transparent)}
+.dust-legend{display:flex;flex-wrap:wrap;gap:6px}
+.dl-chip{display:inline-flex;align-items:center;gap:6px;padding:5px 10px;border-radius:999px;border:1px solid var(--line);background:var(--card);color:var(--fg);font-size:.85rem}
+.dl-chip small{color:var(--muted)}
+.dl-chip[aria-pressed="true"]{border-color:var(--accent);background:var(--accent-soft)}
+.dl-dot{width:9px;height:9px;border-radius:50%;background:var(--hc)}
+.done-row{width:100%;text-align:left;color:var(--fg)}
+.done-row .row-main{display:flex;flex-direction:column;gap:4px;flex:1;min-width:0}
+.dr-undo{display:flex}
 .group-head{padding:16px;border-radius:16px;display:flex;flex-direction:column;gap:4px}
 .group-head.input{background:var(--in-soft)}
 .group-head.output{background:var(--out-soft)}
@@ -452,7 +467,7 @@ details.done-box .rows{margin-top:8px}
 (function(){
 "use strict";
 /* ================= data ================= */
-const APP_VERSION="v28";
+const APP_VERSION="v29";
 const LS="checklist-v4", OLD=["todo-items-v3","todo-items-v1"];
 const DAYS=["일","월","화","수","목","금","토"], ORDER=[1,2,3,4,5,6,0];
 const GROUPS={input:"인풋",output:"아웃풋",etc:"기타"};
@@ -1644,6 +1659,152 @@ function wishRow(w){
 }
 
 let groupFilter={input:"",output:"",etc:""};
+/* ================= 완료 보관함 · 티끌 모아 태산 ================= */
+/* 퀘스트가 끝난 날 (안 끝났으면 "") */
+function questDoneAt(q){
+  const last=ks=>{ks=ks.sort();return ks[ks.length-1]||"";};
+  if(q.read){if(q.read.cur<q.read.total)return "";return last(Object.keys(q.read.hist||{}))||q.read.end||today();}
+  if(q.plan){if(!finished(q))return "";return last(Object.keys(q.log||{}).filter(k=>q.log[k]))||today();}
+  if(q.end&&q.end<today())return q.end;
+  return "";
+}
+const isQuestDone=q=>!!questDoneAt(q);
+/* 완료한 것 하나가 남기는 가루 알갱이 수 (많이 한 만큼 많이) */
+function grainsOf(x){
+  const c=(n)=>Math.max(10,Math.min(90,Math.round(n*2)));
+  if(x.kind==="item")return 16;
+  const q=x.o;
+  if(q.read){const r=q.read;return c(r.unit==="page"?r.total/8:r.unit==="min"?r.total/6:r.total*1.5);}
+  if(q.plan)return c(q.plan.sessions*2);
+  return c(doneTotal(q)*2);
+}
+function archiveOf(g){
+  const its=S.items.filter(i=>i.group===g&&i.done).map(i=>({kind:"item",o:i,title:i.text,at:i.doneAt||i.due||"",sub:i.sub}));
+  const qs=S.quests.filter(q=>q.group===g).map(q=>({q,at:questDoneAt(q)})).filter(x=>x.at).map(({q,at})=>({kind:"quest",o:q,title:q.title,at,sub:q.sub}));
+  return [...its,...qs].sort((a,b)=>(a.at||"").localeCompare(b.at||"")||((a.o.created||0)-(b.o.created||0)));
+}
+function hexRgb(h){h=(h||"").trim().replace("#","");if(h.length===3)h=h.split("").map(c=>c+c).join("");const n=parseInt(h,16);return isNaN(n)?[150,150,150]:[(n>>16)&255,(n>>8)&255,n&255];}
+/* 가루 병 그리기: 오래된 것부터 아래에 쌓여서 지층처럼 보여요. 새로 생긴 가루는 위에서 떨어져요. */
+function drawDust(cv,list,g,opts={}){
+  const W=cv.clientWidth||300,H=cv.clientHeight||120,dpr=window.devicePixelRatio||1;
+  cv.width=Math.round(W*dpr);cv.height=Math.round(H*dpr);
+  const ctx=cv.getContext("2d");ctx.setTransform(dpr,0,0,dpr,0,0);ctx.clearRect(0,0,W,H);
+  const css=getComputedStyle(document.documentElement);
+  const grains=[];
+  let seed=7;const rnd=()=>{seed=(seed*16807)%2147483647;return (seed-1)/2147483646;};
+  list.forEach(x=>{
+    const m=metaOf(g,x.sub),base=hexRgb(css.getPropertyValue("--h"+m.c));
+    for(let i=0;i<grainsOf(x);i++)grains.push(base);
+  });
+  if(!grains.length){
+    ctx.fillStyle=css.getPropertyValue("--muted");ctx.globalAlpha=.7;ctx.font="13px sans-serif";ctx.textAlign="center";
+    ctx.fillText(opts.emptyText||"완료하면 여기에 색 가루가 쌓여요",W/2,H/2+4);ctx.globalAlpha=1;return;
+  }
+  // 알갱이 크기: 병에 다 들어가도록 줄여요
+  const pad=6;let r=opts.r||2.3,pos;
+  for(;;){
+    const cw=r*1.55,cols=Math.max(4,Math.floor((W-pad*2)/cw)),hs=new Array(cols).fill(0),gh=r*1.45;
+    seed=7;pos=[];let over=false;
+    for(let i=0;i<grains.length;i++){
+      // 가운데 근처로 떨어뜨리고, 옆이 낮으면 굴러 내려가요
+      const u=rnd()<.35?rnd():(rnd()+rnd()+rnd())/3;let c=Math.min(cols-1,Math.max(0,Math.floor(u*cols)));
+      for(let k=0;k<cols;k++){
+        const L=c>0?hs[c-1]:1e9,R=c<cols-1?hs[c+1]:1e9;
+        if(L<hs[c]-1&&(L<=R||rnd()<.5))c--;else if(R<hs[c]-1)c++;else break;
+      }
+      const y=H-pad-r-hs[c]*gh;if(y<pad+r){over=true;break;}
+      pos.push([pad+c*cw+cw/2+(rnd()-.5)*r*.6,y+(rnd()-.5)*r*.3]);hs[c]++;
+    }
+    if(!over||r<1)break;r*=.88;
+  }
+  const seen=Math.min(opts.seen==null?grains.length:opts.seen,pos.length);
+  const shade=(rgb,i)=>{const j=((i*2654435761)>>>0)%1000/1000;const f=.82+j*.36;return `rgb(${rgb.map(v=>Math.min(255,Math.round(v*f))).join(",")})`;};
+  const dot=(x,y,i)=>{ctx.fillStyle=shade(grains[i],i);ctx.beginPath();ctx.arc(x,y,r,0,Math.PI*2);ctx.fill();};
+  for(let i=0;i<seen;i++)dot(pos[i][0],pos[i][1],i);
+  if(seen>=pos.length)return;
+  // 새 가루 떨어지는 애니메이션
+  const reduce=window.matchMedia&&matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const still=document.createElement("canvas");still.width=cv.width;still.height=cv.height;still.getContext("2d").drawImage(cv,0,0);
+  const t0=performance.now(),dur=900,stagger=Math.min(14,1400/(pos.length-seen));
+  const frame=t=>{
+    if(!cv.isConnected)return;
+    ctx.setTransform(1,0,0,1,0,0);ctx.clearRect(0,0,cv.width,cv.height);ctx.drawImage(still,0,0);ctx.setTransform(dpr,0,0,dpr,0,0);
+    let done=true;
+    for(let i=seen;i<pos.length;i++){
+      const p=reduce?1:Math.min(1,Math.max(0,(t-t0-(i-seen)*stagger)/dur));if(p<1)done=false;if(p<=0)continue;
+      const e=p*p;dot(pos[i][0],-r+(pos[i][1]+r)*e,i);
+    }
+    if(!done)requestAnimationFrame(frame);
+  };
+  requestAnimationFrame(frame);
+}
+const dustSeen=g=>{try{return parseInt(localStorage.getItem("checklist-dust-"+g),10);}catch(e){return NaN;}};
+const setDustSeen=(g,n)=>{try{localStorage.setItem("checklist-dust-"+g,String(n));}catch(e){}};
+function grainCount(list){return list.reduce((a,x)=>a+grainsOf(x),0);}
+/* 그룹 화면 위쪽: 가루 병 카드 */
+function dustCard(g){
+  const list=archiveOf(g),n=grainCount(list),s=dustSeen(g);
+  const b=el("button","dust-card");b.type="button";b.setAttribute("aria-label",`${GROUPS[g]} 완료 보관함 열기 · 완료 ${list.length}개`);
+  const cv=el("canvas","dust-cv");
+  const tx=el("div","dust-tx");
+  tx.append(el("b",null,list.length?`완료 ${list.length}개`:"완료 보관함"),el("span",null,list.length?"티끌 모아 태산 · 눌러서 여태 한 것 보기":"끝낸 일은 여기로 모여요"));
+  tx.appendChild(el("span","chev","›"));
+  b.append(cv,tx);b.addEventListener("click",()=>go("done/"+g));
+  requestAnimationFrame(()=>{drawDust(cv,list,g,{seen:isNaN(s)?n:s});setDustSeen(g,n);});
+  return b;
+}
+let doneFilter="";
+function screenDone(v,g){
+  if(!GKEYS.includes(g)){go("home",true);return;}
+  setTitle(`${GROUPS[g]} 완료 보관함`);
+  const all=archiveOf(g);
+  const jar=el("div","dust-jar");const cv=el("canvas","dust-cv big");jar.appendChild(cv);v.appendChild(jar);
+  requestAnimationFrame(()=>{drawDust(cv,all,g,{emptyText:"아직 완료한 게 없어요",r:2.8});setDustSeen(g,grainCount(all));});
+  // 세부 카테고리별 개수 (누르면 거르기)
+  const by=new Map();all.forEach(x=>{const k=x.sub||"";by.set(k,(by.get(k)||0)+1);});
+  if(doneFilter&&!by.has(doneFilter))doneFilter="";
+  const lg=el("div","dust-legend");
+  const chip=(k,label,cnt,c)=>{const t=el("button","dl-chip");t.type="button";t.setAttribute("aria-pressed",String(doneFilter===k));
+    if(c!=null){const d=el("span","dl-dot hue"+c);t.appendChild(d);}t.append(label,el("small",null,String(cnt)));
+    t.addEventListener("click",()=>{doneFilter=doneFilter===k?"":k;render();});lg.appendChild(t);};
+  chip("","전체",all.length,null);
+  [...by.entries()].sort((a,b)=>b[1]-a[1]).forEach(([k,n])=>chip(k,k||"분류 없음",n,metaOf(g,k).c));
+  v.appendChild(lg);
+  const list=all.filter(x=>!doneFilter||(x.sub||"")===doneFilter).reverse();
+  if(!list.length){v.appendChild(el("div","empty","아직 완료한 일이 없어요. 할 일을 체크하거나 분량 목표를 끝내면 여기에 모여요."));return;}
+  // 달별로 묶어서
+  let cur="",rows=null;
+  list.forEach(x=>{
+    const ym=(x.at||"").slice(0,7);
+    if(ym!==cur){cur=ym;const [y,m]=ym.split("-");
+      const cnt=list.filter(z=>(z.at||"").slice(0,7)===ym).length;
+      const sec=el("div","sec");sec.append(el("h3",null,ym?`${y}년 ${parseInt(m,10)}월`:"날짜 없음"),el("span",null,`${cnt}개`));v.appendChild(sec);
+      rows=el("div","rows");v.appendChild(rows);}
+    rows.appendChild(doneRow(x));
+  });
+}
+function doneRow(x){
+  const o=x.o,c=el("button","row-card done-row");c.type="button";
+  const main=el("span","row-main");main.appendChild(el("span","row-text",x.title));
+  let info="";
+  if(x.kind==="quest"){
+    if(o.read){const r=o.read,U=unitOf(o),fm=k=>{const d=parse(k);return `${d.getMonth()+1}/${d.getDate()}`;};
+      const ks=Object.keys(r.hist||{}).sort();info=`${r.total}${U.u} · ${fm(ks[0]||r.start)}~${fm(x.at)}`;}
+    else if(o.plan)info=`${o.plan.total}${o.plan.unit} · ${o.plan.sessions}회`;
+    else info=`반복 ${doneTotal(o)}회`;
+  }
+  const d=x.at?parse(x.at):null;
+  const m=el("span","meta");
+  if(d)m.appendChild(el("span","tag plain",`${d.getMonth()+1}/${d.getDate()} 완료`));
+  if(info)m.appendChild(el("span","tag plain",info));
+  m.appendChild(el("span","tag cat hue"+metaOf(o.group,o.sub).c,o.sub||GROUPS[o.group]));
+  main.appendChild(m);
+  c.append(catIco(o),main);
+  if(x.kind==="item"){const w=el("span","dr-undo");w.appendChild(checkBtn(true,false,x.title+" 완료 취소",e=>{e.stopPropagation();o.done=false;o.doneAt="";save();render();toast("할 일로 되돌렸어요.");}));c.appendChild(w);}
+  c.addEventListener("click",()=>openSheet(x.kind==="item"?{mode:"edit-task",id:o.id}:{mode:o.read?"log":"edit-quest",id:o.id}));
+  return c;
+}
+
 function screenGroup(v,g){
   const head=el("div","group-head "+g);head.append(el("span","numeral",GROUPS[g]),el("p",null,GDESC[g]));
   v.appendChild(head);
@@ -1654,10 +1815,12 @@ function screenGroup(v,g){
   if(!used.has(groupFilter[g])) groupFilter[g]="";
   sel.value=groupFilter[g];
   sel.addEventListener("change",()=>{groupFilter[g]=sel.value;render();});
+  v.appendChild(dustCard(g));
   const fr=el("div","filter-row");fr.append(sel,catEditBtn(g));v.appendChild(fr);
   const f=groupFilter[g], match=o=>o.group===g&&(!f||o.sub===f);
 
-  const qs=S.quests.filter(match);
+  // 끝난 퀘스트와 완료한 일은 '완료 보관함'으로 가요
+  const qs=S.quests.filter(q=>match(q)&&!isQuestDone(q));
   const sec1=el("div","sec");sec1.append(el("h3",null,"반복 퀘스트"),el("span",null,qs.length?`${qs.length}개`:""));v.appendChild(sec1);
   const r1=el("div","rows");
   if(!qs.length) r1.appendChild(el("div","empty","반복 퀘스트가 없어요."));
@@ -1670,13 +1833,8 @@ function screenGroup(v,g){
   if(!open.length) r2.appendChild(el("div","empty","남은 할 일이 없어요."));
   open.forEach(i=>r2.appendChild(taskRow(i,{showPrio:true})));
   v.appendChild(r2);
-  if(done.length){
-    const d=el("details","done-box");d.appendChild(el("summary",null,`완료한 일 ${done.length}개`));
-    const r=el("div","rows");done.forEach(i=>r.appendChild(taskRow(i)));
-    const clr=el("button","more","완료한 일 지우기");clr.type="button";clr.style.marginTop="8px";
-    clr.addEventListener("click",()=>{S.items=S.items.filter(i=>!(match(i)&&i.done));save();render();toast("완료한 일을 지웠어요.");});
-    d.append(r,clr);v.appendChild(d);
-  }
+  const doneQ=S.quests.filter(q=>match(q)&&isQuestDone(q)).length;
+  if(done.length||doneQ){const m=el("button","more",`완료 보관함 보기 (${done.length+doneQ}개) →`);m.type="button";m.addEventListener("click",()=>go("done/"+g));v.appendChild(m);}
 }
 
 function screenSettings(v){
@@ -1796,6 +1954,7 @@ function render(){
   else if(r==="missions"){setTitle("메인 미션");screenMissions(v);}
   else if(r.startsWith("mission/")){screenMission(v,r.slice(8));}
   else if(GKEYS.includes(r)){setTitle(GROUPS[r]);screenGroup(v,r);}
+  else if(r.startsWith("done/")){screenDone(v,r.slice(5));}
   else if(r==="wish"){setTitle("위시리스트");screenWish(v);}
   else if(r==="schedule"){screenSchedule(v);}
   else if(r==="settings"){setTitle("설정");screenSettings(v);}
