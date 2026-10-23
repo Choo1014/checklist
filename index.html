@@ -139,6 +139,15 @@ main{max-width:560px;margin:0 auto;padding-inline:16px;padding-block:4px calc(en
 .dust-card .chev{font-size:1.3rem;color:var(--muted)}
 .dust-jar{display:flex;justify-content:center;padding:8px 0 4px}
 .dust-cv.big{width:100%;max-width:340px;height:300px}
+.hold-link{display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:14px;border:1px dashed var(--line);background:var(--card);color:var(--fg);text-align:left}
+.hold-link .hl-ic{width:28px;height:28px;border-radius:50%;display:grid;place-content:center;background:var(--accent-soft);color:var(--accent);line-height:0}
+.hold-link .hl-ic svg{width:14px;height:14px}
+.hold-link .hl-t{flex:1;font-weight:600;font-size:.9rem}
+.hold-link .chev{color:var(--muted);font-size:1.2rem}
+.hold-row{align-items:center}
+.hold-row .hold-go{flex:none;padding:8px 12px;font-size:.85rem}
+.hold-row .row-text{color:var(--muted)}
+.q-card.held{opacity:.7}
 .dust-legend{display:flex;flex-wrap:wrap;gap:6px}
 .dl-chip{display:inline-flex;align-items:center;gap:6px;padding:5px 10px;border-radius:999px;border:1px solid var(--line);background:var(--card);color:var(--fg);font-size:.85rem}
 .dl-chip small{color:var(--muted)}
@@ -469,7 +478,7 @@ details.done-box .rows{margin-top:8px}
 (function(){
 "use strict";
 /* ================= data ================= */
-const APP_VERSION="v30";
+const APP_VERSION="v31";
 const LS="checklist-v4", OLD=["todo-items-v3","todo-items-v1"];
 const DAYS=["일","월","화","수","목","금","토"], ORDER=[1,2,3,4,5,6,0];
 const GROUPS={input:"인풋",output:"아웃풋",etc:"기타"};
@@ -705,6 +714,7 @@ function setReadPage(q,p){
   if(r.cur>=r.total&&base<r.total)toast(`『${q.title.replace(/[『』]/g,"")}』 ${unitOf(q).fin}`);
 }
 function questOnDay(q,t){
+  if(q.hold) return false; // 홀드 중이면 어느 날에도 안 나와요
   const td=today(); if(!q.days.includes(parse(t).getDay())) return false;
   if(t<td) return !!(q.log&&q.log[t]); // 지난 날: 실제로 한 날만
   if(q.read){if(t<q.read.start)return false;const h=t===td&&q.read.hist&&q.read.hist[t];return (h?h.from:q.read.cur)<q.read.total;}
@@ -1339,7 +1349,7 @@ function questRow(q,opts={}){
   return c;
 }
 function questCard(q){
-  const card=el("button","q-card"); card.type="button";
+  const card=el("button","q-card"+(q.hold?" held":"")); card.type="button";
   const body=el("span","q-body");
   body.appendChild(el("span","row-text",q.title));
   const ds=ORDER.filter(d=>q.days.includes(d)).map(d=>DAYS[d]).join("·");
@@ -1353,7 +1363,7 @@ function questCard(q){
     body.appendChild(el("span","q-info",`${ds} · ${q.plan.total}${q.plan.unit}를 ${q.plan.sessions}회에 · `+(n>=q.plan.sessions?"모두 완료":`${n}/${q.plan.sessions}회`)));
     const bar=el("div","bar2"),s=el("span");s.style.width=(n/q.plan.sessions*100)+"%";bar.appendChild(s);body.appendChild(bar);
   } else body.appendChild(el("span","q-info",`${ds} 반복 · ${doneTotal(q)}회 완료`+(isTodayQuest(q)?" · 오늘":` · 다음: ${nextDay(q)}`)));
-  body.appendChild(tagsFor(q));
+  const tg=tagsFor(q);if(q.hold)tg.prepend(el("span","tag plain","⏸ 홀드 중"));body.appendChild(tg);
   card.append(catIco(q),body);
   card.addEventListener("click",()=>openSheet({mode:q.read?"log":"edit-quest",id:q.id}));
   return card;
@@ -1416,6 +1426,7 @@ function screenHome(v){
   wt.addEventListener("click",()=>go("wish"));
   tiles.appendChild(wt);
   v.appendChild(tiles);
+  const hl0=holdLink();if(hl0)v.appendChild(hl0);
 
   const t=today();
   if(!homeDay)homeDay=t;
@@ -1664,6 +1675,7 @@ let groupFilter={input:"",output:"",etc:""};
 /* ================= 완료 보관함 · 티끌 모아 태산 ================= */
 /* 퀘스트가 끝난 날 (안 끝났으면 "") */
 function questDoneAt(q){
+  if(q.hold)return "";
   const last=ks=>{ks=ks.sort();return ks[ks.length-1]||"";};
   if(q.read){if(q.read.cur<q.read.total)return "";return last(Object.keys(q.read.hist||{}))||q.read.end||today();}
   if(q.plan){if(!finished(q))return "";return last(Object.keys(q.log||{}).filter(k=>q.log[k]))||today();}
@@ -1821,6 +1833,73 @@ function doneRow(x){
   return c;
 }
 
+/* ================= 홀드: 진행도는 그대로 두고 잠시 멈추기 ================= */
+const ICON_PAUSE='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/></svg>';
+const heldQuests=g=>S.quests.filter(q=>q.hold&&(!g||q.group===g));
+const dayDiff=(a,b)=>Math.round((parse(b)-parse(a))/86400000);
+function holdQuest(q){
+  const t=today();q.hold={at:t};
+  // 앞으로 잡아 둔 스케쥴에서는 빼요
+  const key="quests/"+q.id;
+  Object.keys(S.sched||{}).filter(d=>d>=t).forEach(d=>{const arr=S.sched[d]||[];if(arr.some(b=>b.key===key))setSchedDay(arr.filter(b=>b.key!==key),d);});
+  save();
+}
+/* 다시 시작: 멈춰 있던 날 수만큼 기간을 뒤로 밀어요 (남은 기간은 그대로) */
+function resumeQuest(q){
+  const h=q.hold;delete q.hold;if(!h){save();return "";}
+  const t=today(),gap=Math.max(0,dayDiff(h.at,t));
+  const sh=d=>{const x=parse(d);x.setDate(x.getDate()+gap);return ymd(x);};
+  const fix=(o,sk,ek)=>{
+    if(o[sk]&&o[sk]>h.at)o[sk]=sh(o[sk]);
+    if(o[ek]){if(o[ek]>=h.at)o[ek]=sh(o[ek]);else o[ek]=shiftDay(t,7);}
+  };
+  if(q.read)fix(q.read,"start","end");
+  else{fix(q,"start","end");if(q.plan&&q.plan.start>h.at)q.plan.start=sh(q.plan.start);}
+  save();
+  const e=q.read?q.read.end:q.end;if(!e)return "";const d=parse(e);return `${d.getMonth()+1}/${d.getDate()}`;
+}
+function holdProgress(q){
+  if(q.read){const r=q.read,U=unitOf(q);return `${r.cur} / ${r.total}${U.u} (${Math.round(r.cur/r.total*100)}%)`;}
+  if(q.plan)return `${Math.min(doneTotal(q),q.plan.sessions)} / ${q.plan.sessions}회`;
+  return `${doneTotal(q)}회 했음`;
+}
+function holdLink(g){
+  const n=heldQuests(g).length;if(!n)return null;
+  const b=el("button","hold-link");b.type="button";const ic=el("span","hl-ic");ic.innerHTML=ICON_PAUSE;
+  b.append(ic,el("span","hl-t",`홀드된 일정 ${n}개`),el("span","chev","›"));b.addEventListener("click",()=>go("hold"));return b;
+}
+function screenHold(v){
+  setTitle("홀드된 일정");
+  v.appendChild(el("p","hint","잠시 멈춰 둔 분량 목표·반복 퀘스트예요. 지금까지 한 만큼은 그대로 남아 있고, 다시 시작하면 멈춰 있던 날 수만큼 끝나는 날이 뒤로 밀려요."));
+  const list=heldQuests();
+  if(!list.length){v.appendChild(el("div","empty","홀드된 일정이 없어요. 분량 목표의 기록 창이나 수정 창에서 '홀드'를 누르면 여기로 와요."));return;}
+  GKEYS.forEach(g=>{
+    const qs=list.filter(q=>q.group===g);if(!qs.length)return;
+    const sec=el("div","sec");sec.append(el("h3",null,GROUPS[g]),el("span",null,`${qs.length}개`));v.appendChild(sec);
+    const rows=el("div","rows");
+    qs.forEach(q=>{
+      const c=el("div","row-card hold-row");
+      const main=el("button","row-main");main.type="button";main.appendChild(el("span","row-text",q.title));
+      const d=parse(q.hold.at),days=dayDiff(q.hold.at,today());
+      main.appendChild(el("span","row-amount",holdProgress(q)));
+      if(q.read){const bar=el("div","bar2 read-bar"),sp=el("span");sp.style.width=(q.read.cur/q.read.total*100)+"%";bar.appendChild(sp);main.appendChild(bar);}
+      const m=tagsFor(q);m.prepend(el("span","tag plain",`${d.getMonth()+1}/${d.getDate()}부터 홀드`+(days?` · ${days}일째`:"")));main.appendChild(m);
+      main.addEventListener("click",()=>openSheet({mode:"edit-quest",id:q.id}));
+      const rb=el("button","btn soft hold-go","다시 시작");rb.type="button";
+      rb.addEventListener("click",()=>{const e=resumeQuest(q);render();toast(e?`다시 시작했어요. 끝나는 날: ${e}`:"다시 시작했어요.");});
+      c.append(catIco(q),main,rb);rows.appendChild(c);
+    });
+    v.appendChild(rows);
+  });
+}
+function holdButton(q,after){
+  const b=el("button","btn soft",q.hold?"다시 시작":"홀드");b.type="button";
+  b.addEventListener("click",()=>{
+    if(q.hold){const e=resumeQuest(q);closeSheet();render();toast(e?`다시 시작했어요. 끝나는 날: ${e}`:"다시 시작했어요.");return;}
+    holdQuest(q);closeSheet();render();toast("홀드했어요. 진행도는 그대로 남아 있어요.");if(after)after();
+  });
+  return b;
+}
 function screenGroup(v,g){
   const head=el("div","group-head "+g);head.append(el("span","numeral",GROUPS[g]),el("p",null,GDESC[g]));
   v.appendChild(head);
@@ -1836,12 +1915,13 @@ function screenGroup(v,g){
   const f=groupFilter[g], match=o=>o.group===g&&(!f||o.sub===f);
 
   // 끝난 퀘스트와 완료한 일은 '완료 보관함'으로 가요
-  const qs=S.quests.filter(q=>match(q)&&!isQuestDone(q));
+  const qs=S.quests.filter(q=>match(q)&&!isQuestDone(q)&&!q.hold);
   const sec1=el("div","sec");sec1.append(el("h3",null,"반복 퀘스트"),el("span",null,qs.length?`${qs.length}개`:""));v.appendChild(sec1);
   const r1=el("div","rows");
   if(!qs.length) r1.appendChild(el("div","empty","반복 퀘스트가 없어요."));
   qs.forEach(q=>r1.appendChild(isTodayQuest(q)?questRow(q):questCard(q)));
   v.appendChild(r1);
+  const hl=holdLink(g);if(hl)v.appendChild(hl);
 
   const open=sortTasks(S.items.filter(i=>match(i)&&!i.done)), done=S.items.filter(i=>match(i)&&i.done);
   const sec2=el("div","sec");sec2.append(el("h3",null,"할 일"),el("span",null,open.length?`${open.length}개`:""));v.appendChild(sec2);
@@ -1972,6 +2052,7 @@ function render(){
   else if(GKEYS.includes(r)){setTitle(GROUPS[r]);screenGroup(v,r);}
   else if(r.startsWith("done/")){screenDone(v,r.slice(5));}
   else if(r==="wish"){setTitle("위시리스트");screenWish(v);}
+  else if(r==="hold"){screenHold(v);}
   else if(r==="schedule"){screenSchedule(v);}
   else if(r==="settings"){setTitle("설정");screenSettings(v);}
   else {go("home",true);return render();}
@@ -2273,6 +2354,7 @@ function openSheet(o){
     armButton(del,"한 번 더 누르면 삭제",()=>{
       if(isQuestEdit)S.quests=S.quests.filter(x=>x.id!==src.id);else S.items=S.items.filter(x=>x.id!==src.id);
       save();closeSheet();render();toast("삭제했어요.");});
+    if(isQuestEdit)br.appendChild(holdButton(src));
     br.appendChild(del);
   }
   sh.appendChild(br);
@@ -2377,6 +2459,7 @@ function logSheet(sh,o){
   const br=el("div","btnrow");const sv=el("button","btn","등록");sv.type="submit";br.appendChild(sv);
   if(ri.logged){const cl=el("button","btn soft","오늘 기록 지우기");cl.type="button";cl.addEventListener("click",()=>{setReadPage(q,ri.base);save();closeSheet();render();toast("오늘 기록을 지웠어요.");});br.appendChild(cl);}
   const ed=el("button","btn soft","계획 수정");ed.type="button";ed.addEventListener("click",()=>openSheet({mode:"edit-quest",id:q.id}));br.appendChild(ed);
+  br.appendChild(holdButton(q));
   sh.appendChild(br);
   sh.addEventListener("submit",e=>{e.preventDefault();const p=parsePos();if(p==null){(isMin?inH:inp).focus();return;}
     const pos=Math.min(r.total,p);setReadPage(q,pos);save();closeSheet();render();
