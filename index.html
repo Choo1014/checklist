@@ -481,7 +481,7 @@ details.done-box .rows{margin-top:8px}
 (function(){
 "use strict";
 /* ================= data ================= */
-const APP_VERSION="v32";
+const APP_VERSION="v33";
 const LS="checklist-v4", OLD=["todo-items-v3","todo-items-v1"];
 const DAYS=["일","월","화","수","목","금","토"], ORDER=[1,2,3,4,5,6,0];
 const GROUPS={input:"인풋",output:"아웃풋",etc:"기타"};
@@ -2496,6 +2496,29 @@ async function lookWikidata(q){
     const lab=(e.labels.ko||e.labels.en||{}).value||id,desc=(e.descriptions.ko||e.descriptions.en||{}).value||"";
     return {name:lab,desc,eps:wdNum(cl,"P1113")||0,min:wdMinutes(cl),pages:wdNum(cl,"P1104")||0,src:"위키데이터"};}).filter(Boolean);
 }
+/* 위키백과 본문 검색 (띄어쓰기·표기가 조금 달라도 찾아요) → 연결된 위키데이터의 상영 시간·화수·쪽수,
+   없으면 위키백과 정보상자의 '상영 시간'을 직접 읽어요 */
+async function lookWikipedia(q,lang){
+  const api=`https://${lang}.wikipedia.org/w/api.php`;
+  const s=await getJSON(`${api}?action=query&generator=search&gsrsearch=${encodeURIComponent(q)}&gsrlimit=5&prop=pageprops|description&ppprop=wikibase_item&format=json&origin=*`);
+  const pages=Object.values((s.query&&s.query.pages)||{}).sort((a,b)=>(a.index||0)-(b.index||0));
+  if(!pages.length)return [];
+  const ids=pages.map(p=>p.pageprops&&p.pageprops.wikibase_item).filter(Boolean);
+  let ents={};
+  if(ids.length){try{const g=await getJSON(`https://www.wikidata.org/w/api.php?action=wbgetentities&ids=${ids.join("|")}&props=claims|labels&languages=ko|en&format=json&origin=*`);ents=g.entities||{};}catch(e){}}
+  const out=[];
+  for(const p of pages){
+    const e=ents[p.pageprops&&p.pageprops.wikibase_item],cl=(e&&e.claims)||{};
+    let min=e?wdMinutes(cl):0;
+    if(!min&&out.length<3&&p.index<=2){ // 정보상자에서 직접 읽기
+      try{const w=await getJSON(`${api}?action=parse&pageid=${p.pageid}&prop=wikitext&section=0&format=json&origin=*`);
+        const t=(w.parse&&w.parse.wikitext&&w.parse.wikitext["*"])||"";
+        const m=t.match(/\|\s*(?:상영\s*시간|러닝\s*타임|running\s*time|runtime)\s*=\s*[^\n]*?(\d{2,3})\s*(?:분|min|minutes)/i);if(m)min=+m[1];}catch(err){}
+    }
+    out.push({name:p.title,desc:p.description||"",eps:e?(wdNum(cl,"P1113")||0):0,min,pages:e?(wdNum(cl,"P1104")||0):0,src:lang==="ko"?"위키백과":"Wikipedia"});
+  }
+  return out;
+}
 async function lookJikan(q){
   const s=await getJSON(`https://api.jikan.moe/v4/anime?q=${encodeURIComponent(q)}&limit=4&sfw=true`);
   return (s.data||[]).map(a=>{let m=0;const d=String(a.duration||"");const h=d.match(/(\d+)\s*hr/),mm=d.match(/(\d+)\s*min/);m=(h?+h[1]*60:0)+(mm?+mm[1]:0);
@@ -2516,9 +2539,10 @@ async function lookupAmount(rawTitle,unit,out,apply){
   out.innerHTML="";
   if(!q){out.appendChild(el("span","hint","찾을 제목을 적어 주세요."));return;}
   out.appendChild(el("span","hint",`'${q}' 찾는 중…`));
-  const jobs=unit==="page"?[lookBooks(q),lookWikidata(q)]:unit==="ep"?[lookWikidata(q),lookJikan(q),lookTvmaze(q)]:[lookWikidata(q),lookTvmaze(q)];
+  const jobs=unit==="page"?[lookBooks(q),lookWikidata(q)]:unit==="ep"?[lookWikidata(q),lookWikipedia(q,"ko"),lookJikan(q),lookTvmaze(q)]:[lookWikipedia(q,"ko"),lookWikidata(q),lookWikipedia(q,"en"),lookTvmaze(q)];
   const res=(await Promise.all(jobs.map(p=>p.catch(()=>[])))).flat();
-  const good=res.filter(r=>unit==="page"?r.pages>0:unit==="ep"?r.eps>0:r.min>0).slice(0,6);
+  const seen=new Set();
+  const good=res.filter(r=>unit==="page"?r.pages>0:unit==="ep"?r.eps>0:r.min>0).filter(r=>{const k=r.name+"|"+(r.pages||r.eps||r.min);if(seen.has(k))return false;seen.add(k);return true;}).slice(0,6);
   out.innerHTML="";
   if(!good.length){out.appendChild(el("span","hint","찾지 못했어요. 제목을 바꿔 보거나 직접 입력해 주세요."));return;}
   out.appendChild(el("span","hint","맞는 것을 고르면 분량을 채워요."));
