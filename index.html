@@ -148,6 +148,9 @@ main{max-width:560px;margin:0 auto;padding-inline:16px;padding-block:4px calc(en
 .hold-row .hold-go{flex:none;padding:8px 12px;font-size:.85rem}
 .hold-row .row-text{color:var(--muted)}
 .q-card.held{opacity:.7}
+.hm-pair{display:inline-flex;align-items:center;gap:6px}
+.hm-pair[hidden]{display:none}
+.hm-pair input.hm{width:64px;text-align:center}
 .dust-legend{display:flex;flex-wrap:wrap;gap:6px}
 .dl-chip{display:inline-flex;align-items:center;gap:6px;padding:5px 10px;border-radius:999px;border:1px solid var(--line);background:var(--card);color:var(--fg);font-size:.85rem}
 .dl-chip small{color:var(--muted)}
@@ -478,7 +481,7 @@ details.done-box .rows{margin-top:8px}
 (function(){
 "use strict";
 /* ================= data ================= */
-const APP_VERSION="v31";
+const APP_VERSION="v32";
 const LS="checklist-v4", OLD=["todo-items-v3","todo-items-v1"];
 const DAYS=["일","월","화","수","목","금","토"], ORDER=[1,2,3,4,5,6,0];
 const GROUPS={input:"인풋",output:"아웃풋",etc:"기타"};
@@ -691,7 +694,7 @@ const finished=q=>q.plan&&doneTotal(q)>=q.plan.sessions;
 const UNITS={page:{u:"쪽",verb:"읽었나요",did:"읽음",fin:"다 읽었어요!"},min:{u:"분",verb:"봤나요",did:"봄",fin:"다 봤어요!"},ep:{u:"화",verb:"봤나요",did:"봄",fin:"정주행 완료!"}};
 const unitOf=q=>UNITS[(q.read&&q.read.unit)||"page"];
 const tomorrowYmd=()=>{const d=new Date();d.setDate(d.getDate()+1);return ymd(d);};
-const FORMATS={"시리즈":{unit:"ep",ph:"시리즈 제목 (예: 더 글로리)"},"독서":{unit:"page",ph:"책 제목 (예: 코스모스)"},"책":{unit:"page",ph:"책 제목"},"드라마":{unit:"ep",ph:"드라마 제목 (예: 더 글로리)"},"애니":{unit:"ep",ph:"애니 제목"},"영화":{once:true,time:120,ph:"영화 제목"}};
+const FORMATS={"시리즈":{unit:"ep",ph:"시리즈 제목 (예: 더 글로리)"},"독서":{unit:"page",ph:"책 제목 (예: 코스모스)"},"책":{unit:"page",ph:"책 제목"},"드라마":{unit:"ep",ph:"드라마 제목 (예: 더 글로리)"},"애니":{unit:"ep",ph:"애니 제목"},"영화":{unit:"min",ph:"영화 제목 (예: 에딩턴)"}};
 function readDaysFrom(q,from){
   const r=q.read;let n=0;const d=parse(from>r.start?from:r.start),e=parse(r.end);
   while(d<=e){if(q.days.includes(d.getDay()))n++;d.setDate(d.getDate()+1);}return n;
@@ -2210,6 +2213,16 @@ function openSheet(o){
   }
   const whenBody=[whenSeg,onceWrap,repeatWrap];
 
+  /* 분 단위 칸을 [시간][분] 두 칸으로 보여 주는 도우미 (실제 값은 원래 칸에 분으로 들어가요) */
+  function hmPair(target,id){
+    const mk=(sfx,ph,max)=>{const i=el("input");i.type="number";i.min="0";if(max)i.max=max;i.inputMode="numeric";i.id=id+sfx;i.placeholder=ph;i.className="hm";return i;};
+    const hh=mk("-h","0"),mm=mk("-m","0","59");
+    const wrap=el("span","hm-pair");wrap.append(hh,el("span",null,"시간"),mm,el("span",null,"분"));
+    const load=()=>{const v=parseInt(target.value,10);if(isNaN(v)){hh.value="";mm.value="";return;}hh.value=String(Math.floor(v/60));mm.value=String(v%60);};
+    const push=()=>{const a=hh.value.trim(),b=mm.value.trim();target.value=(a===""&&b==="")?"":String((parseInt(a||"0",10)||0)*60+(parseInt(b||"0",10)||0));target.dispatchEvent(new Event("input"));};
+    hh.addEventListener("input",push);mm.addEventListener("input",push);hh.setAttribute("aria-label","시간");mm.setAttribute("aria-label","분");
+    load();return {wrap,load,hh,mm};
+  }
   /* ---- 분량 목표: 서적(쪽) / 영상(분) / 시리즈(화) ---- */
   const unitSeg=seg("unit",[["page","서적 · 쪽"],["min","영상 · 분"],["ep","시리즈 · 화"]],st.unit,v=>{st.unit=v;syncUnit();aPreview();});
   const aTotal=el("input");aTotal.type="number";aTotal.min="1";aTotal.inputMode="numeric";aTotal.id="f-atotal";aTotal.setAttribute("aria-label","총 분량");
@@ -2217,9 +2230,10 @@ function openSheet(o){
   const aEp=el("input");aEp.type="number";aEp.min="1";aEp.inputMode="numeric";aEp.id="f-aep";aEp.setAttribute("aria-label","1화당 분");aEp.placeholder="45";
   if(src&&src.read){aTotal.value=src.read.total;aCur.value=src.read.cur;if(src.read.epMin)aEp.value=src.read.epMin;}
   const uT=el("span"),uC=el("span");
-  const rowT=el("div","r");rowT.append(el("span",null,"총"),aTotal,uT);
+  const pT=hmPair(aTotal,"f-atotal"),pC=hmPair(aCur,"f-acur"),uC2=el("span",null,"까지 봄");
+  const rowT=el("div","r");rowT.append(el("span",null,"총"),aTotal,uT,pT.wrap);
   const rowE=el("div","r");rowE.append(el("span",null,"1화당 약"),aEp,el("span",null,"분"));
-  const rowC=el("div","r");rowC.append(el("span",null,"지금까지"),aCur,uC);
+  const rowC=el("div","r");rowC.append(el("span",null,"지금까지"),aCur,uC,pC.wrap,uC2);
   const lookQ=el("input");lookQ.type="search";lookQ.id="f-lookq";lookQ.maxLength=100;lookQ.placeholder="찾을 작품 제목 (예: 더 글로리)";lookQ.setAttribute("aria-label","찾을 작품 제목");
   let lookEdited=false;lookQ.addEventListener("input",()=>{lookEdited=true;});
   const syncLookQ=()=>{if(!lookEdited)lookQ.value=title.value.replace(/[『』「」<>《》"']/g," ").replace(/\s+(읽기|보기|정주행|완독)$/,"").trim();};
@@ -2228,13 +2242,14 @@ function openSheet(o){
   const lookRow=el("div","look-in");lookRow.append(lookQ,look);
   const lookOut=el("div","look-out");
   const doLook=()=>{if(!lookQ.value.trim()){lookQ.focus();lookOut.innerHTML="";lookOut.appendChild(el("span","hint","찾을 제목을 적어 주세요."));return;}lookupAmount(lookQ.value,st.unit,lookOut,r=>{
-    if(r.total)aTotal.value=r.total;if(r.epMin)aEp.value=r.epMin;aPreview();toast("분량을 채웠어요. 맞는지 확인해 주세요.");
+    if(r.total){aTotal.value=r.total;pT.load();}if(r.epMin)aEp.value=r.epMin;aPreview();toast("분량을 채웠어요. 맞는지 확인해 주세요.");
   });};
   look.addEventListener("click",doLook);
   lookQ.addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();doLook();}});
   const aPv=el("div","preview");
   [aTotal,aCur,aEp].forEach(x=>x.addEventListener("input",aPreview));
   function syncUnit(){const u=UNITS[st.unit].u;uT.textContent=u;uC.textContent=u+(st.unit==="page"?"까지 읽음":"까지 봄");rowE.hidden=st.unit!=="ep";
+    const hm=st.unit==="min";[aTotal,uT,aCur,uC].forEach(x=>x.hidden=hm);[pT.wrap,pC.wrap,uC2].forEach(x=>x.hidden=!hm);if(hm){pT.load();pC.load();}
     aTotal.placeholder=st.unit==="page"?"320":st.unit==="min"?"150":"16";}
   syncUnit();
   const amountBody=[unitSeg,el("span","lbl","인터넷에서 분량 찾기"),lookRow,lookOut,rowT,rowE,rowC,aPv];
@@ -2261,8 +2276,9 @@ function openSheet(o){
   /* ---- 시간 배정 (분) ---- */
   const tMin=el("input");tMin.type="number";tMin.min="5";tMin.max="720";tMin.inputMode="numeric";tMin.id="f-tmin";tMin.placeholder="30";tMin.setAttribute("aria-label","소요 시간(분)");
   if(src&&src.dur)tMin.value=src.dur;
-  const tRow=el("div","r");tRow.append(tMin,el("span",null,"분"));
-  const tQuick=el("div","quick");[15,30,45,60,90,120].forEach(n=>{const b=el("button",null,fmtDur(n));b.type="button";b.addEventListener("click",()=>tMin.value=String(n));tQuick.appendChild(b);});
+  const pM=hmPair(tMin,"f-tmin");tMin.hidden=true;
+  const tRow=el("div","r");tRow.append(tMin,pM.wrap);
+  const tQuick=el("div","quick");[15,30,45,60,90,120].forEach(n=>{const b=el("button",null,fmtDur(n));b.type="button";b.addEventListener("click",()=>{tMin.value=String(n);pM.load();});tQuick.appendChild(b);});
   const timeBody=[tRow,tQuick,el("span","hint","스케쥴러에 넣을 때 이 길이로 들어가요.")];
 
   const mis=el("select");mis.id="f-mission";mis.setAttribute("aria-label","메인 미션");
@@ -2336,7 +2352,7 @@ function openSheet(o){
     if(f){
       if(f.unit){st.unit=f.unit;unitSeg.querySelectorAll("button").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.v===f.unit)));syncUnit();["when","amount"].forEach(k=>{if(!st.mods.has(k)){addMod(k);st.auto.add(k);}});}
       if(f.once&&!st.mods.has("when")){st.mods.add("when");st.auto.add("when");st.whenMode="once";whenSeg.querySelectorAll("button").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.v==="once")));if(!due.value)due.value=today();}
-      if(f.time&&!st.mods.has("time")){st.mods.add("time");st.auto.add("time");if(!tMin.value)tMin.value=String(f.time);}
+      if(f.time&&!st.mods.has("time")){st.mods.add("time");st.auto.add("time");if(!tMin.value){tMin.value=String(f.time);pM.load();}}
       if(f.ph)title.placeholder=f.ph;
     }
     renderMods();
@@ -2368,7 +2384,7 @@ function openSheet(o){
     const mission=st.mods.has("mission")?mis.value:"";
     const newLink=mission&&mission!==(src?src.mission:"");
     const dur=st.mods.has("time")?(parseInt(tMin.value,10)||0):0;
-    if(st.mods.has("time")&&!(dur>0)){tMin.focus();return;}
+    if(st.mods.has("time")&&!(dur>0)){pM.hh.focus();return;}
     let ad=null;
     if(st.mods.has("amount")){const c=aCalc();if(c.err){aPv.textContent=c.err;aPv.classList.add("err");aPv.scrollIntoView({block:"center"});return;}ad=c;}
     if(isQuest()&&!st.days.length){dErr.hidden=false;dayBox.scrollIntoView({block:"center"});return;}
